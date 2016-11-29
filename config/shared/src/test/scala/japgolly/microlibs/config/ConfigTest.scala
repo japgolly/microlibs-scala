@@ -13,10 +13,17 @@ object ConfigTest extends TestSuite {
   implicit def equalResultX[A] = scalaz.Equal.equalA[ResultX[A]]
 
   val src1 = Source.manual[Id]("S1")("i" -> "3", "s" -> "hey")
-  val src2 = Source.manual[Id]("S2")("i" -> "300", "i2" -> "22", "s2" -> "ah")
+  val src2 = Source.manual[Id]("S2")("i" -> "X300", "i2" -> "22", "s2" -> "ah")
 
   val srcs: Sources[Id] =
      src1 > src2
+
+  implicit class ResultXExt[A](private val self: ResultX[A]) extends AnyVal {
+    def get_! : A = self match {
+      case ResultX.Success(a) => a
+      case x => fail(s"Expected success, got: $x")
+    }
+  }
 
 
   override def tests = TestSuite {
@@ -48,5 +55,10 @@ object ConfigTest extends TestSuite {
         Config.need[Int]("s2").run(srcs),
         ResultX.QueryFailure(Map(Key("s2") -> Some((src2.name, ConfigValue.Error("Not an Int.", Some("ah")))))))
 
+    'report {
+      val (_, k: KeyReport) = (Config.need[String]("s") tuple Config.need[Int]("i")).withKeyReport.run(srcs).get_!
+      k.report
+
+    }
   }
 }

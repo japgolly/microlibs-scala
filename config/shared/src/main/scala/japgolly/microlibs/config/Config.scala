@@ -1,7 +1,7 @@
 package japgolly.microlibs.config
 
-import japgolly.microlibs.nonempty._
 import japgolly.microlibs.stdlib_ext.{ParseInt, ParseLong}
+import japgolly.microlibs.stdlib_ext.StdlibExt._
 import java.util.Properties
 import java.util.regex.Pattern
 /*
@@ -13,7 +13,6 @@ import scalaz.syntax.traverse
 import scalaz.std.vector.vectorInstance
 */
 import scalaz._, Scalaz._
-import scalaz.effect.IO
 
 case class Key(value: String) extends AnyVal
 
@@ -194,8 +193,8 @@ trait Config[A] {
     }
   }
 
-//  final def withKeyReport: Config[(A, KeyReport)] =
-//    Config.inst.tuple2(this, Config.keyReport)
+  final def withKeyReport: Config[(A, KeyReport)] =
+    Config.inst.apply2(Config.keyReport, this)((k, a) => (a, k))
 
   final def map[B](f: A => B): Config[B] =
     mapAttempt(a => Result.Success(f(a)))
@@ -235,15 +234,11 @@ object Config {
 
   implicit val inst = new Applicative[Config] {
     override def point[A](a: => A) = new Config[A] {
-//        override def apply[F[_]](sources: Sources[F])(implicit F: Applicative[F]) =
-//          F.point(Result.Success(a))
       override def step[F[_]](implicit F: Applicative[F]) =
         RWS((r, s) => (W.empty, F.point(Result.Success(a)), s))
     }
     override def map[A, B](fa: Config[A])(f: A => B) = fa map f
     override def ap[A, B](fa: => Config[A])(ff: => Config[A => B]) = new Config[B] {
-//        override def apply[F[_]](sources: Sources[F])(implicit F: Applicative[F]) =
-//          F.compose(Result.inst).ap(fa(sources))(ff(sources))
       override def step[F[_]](implicit F: Applicative[F]) = {
         val ga = fa.step[F].getF[S[F], R[F]](IdMonad)
         val gf = ff.step[F].getF[S[F], R[F]](IdMonad)
@@ -262,7 +257,6 @@ object Config {
         RWS { (r, s1) =>
           val k = s1.keyMod(Key(key))
 
-          // TODO put these in State (and reuse/cache)
           val (xxx: XXX[F], s2) =
           s1.queryCache.get(k) match {
             case Some(q) => (q, s1)
@@ -312,11 +306,50 @@ object Config {
       case None => Result.Failure(Map(Key(key) -> None))
     }
 
-//  def keyReport: Config[KeyReport] =
-//    ???
+  def keyReport: Config[KeyReport] =
+    new Config[KeyReport] {
+      override def step[F[_]](implicit F: Applicative[F]): Step[F, Result[KeyReport]] =
+        RWS { (r, s) =>
+
+          val omg: F[Vector[(Key, Map[SourceName, ConfigValue])]] =
+            s.queryCache.toVector.traverse { case (k, x) =>
+              val qwe: F[(Key, Map[SourceName, ConfigValue])] = x.highToLowPri.map(x =>
+                k -> x.toIterator.map(sv => sv.source -> sv.value).toMap)
+              qwe
+            }
+          val omg2: F[Map[Key, Map[SourceName, ConfigValue]]] =
+            omg.map(_.foldLeft[Map[Key, Map[SourceName, ConfigValue]]](Map.empty) {
+              case (q, (k, vs)) => q.modifyValue(k, _.fold(vs)(_ ++ vs))
+            })
+
+          val result: F[Result[KeyReport]] =
+            omg2.map(used =>
+              Result.Success(
+                KeyReport(r.highToLowPri.map(_._1), used)))
+
+          (W.empty, result, s)
+        }
+    }
 }
 
-// case class KeyReport(used: Nothing, unused: Nothing)
+final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
+                           used: Map[Key, Map[SourceName, ConfigValue]]) {
+  def report: String = {
+    val sb = new StringBuilder
+    sb append sourcesHighToLowPri.toIterator.map(_.value).mkString("Key | ", " | ", "")
+    for (k <- used.keys.toList.sortBy(_.value)) {
+      val vs = sourcesHighToLowPri.toIterator.map(used(k).apply).map {
+        case ConfigValue.Found(v) => v
+        case ConfigValue.NotFound => ""
+        case ConfigValue.Error(err, None) => s"¡$err!"
+        case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+      }
+      sb append s"\n${k.value} | ${vs.mkString(" | ")}"
+    }
+    sb.toString
+  }
+
+}
 // filter in/out {un,}used
 // password
 
