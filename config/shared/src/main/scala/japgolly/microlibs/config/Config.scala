@@ -194,7 +194,7 @@ trait Config[A] {
   }
 
   final def withKeyReport: Config[(A, KeyReport)] =
-    Config.inst.apply2(Config.keyReport, this)((k, a) => (a, k))
+    Config.inst.tuple2(this, Config.keyReport)
 
   final def map[B](f: A => B): Config[B] =
     mapAttempt(a => Result.Success(f(a)))
@@ -243,8 +243,8 @@ object Config {
         val ga = fa.step[F].getF[S[F], R[F]](IdMonad)
         val gf = ff.step[F].getF[S[F], R[F]](IdMonad)
         RWS { (r, s0) =>
-          val (w1, fa, s1) = ga(r, s0)
-          val (w2, ff, s2) = gf(r, s1)
+          val (w1, ff, s1) = gf(r, s0)
+          val (w2, fa, s2) = ga(r, s1)
           (w1 ++ w2, F.compose(Result.inst).ap(fa)(ff), s2)
         }
       }

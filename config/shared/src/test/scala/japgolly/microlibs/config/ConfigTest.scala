@@ -56,8 +56,19 @@ object ConfigTest extends TestSuite {
         ResultX.QueryFailure(Map(Key("s2") -> Some((src2.name, ConfigValue.Error("Not an Int.", Some("ah")))))))
 
     'report {
-      val (_, k: KeyReport) = (Config.need[String]("s") tuple Config.need[Int]("i")).withKeyReport.run(srcs).get_!
-      k.report
+      val si: Config[(String, Int)] = Config.need[String]("s") tuple Config.need[Int]("i")
+      "*>" - {
+        val k: KeyReport = (si *> Config.keyReport).run(srcs).get_!
+        k.report
+      }
+      "*> <*" - {
+        val k: KeyReport = (si *> Config.keyReport <* Config.need[Int]("i2")).run(srcs).get_!
+        k.report
+      }
+      'with {
+        val (_, k: KeyReport) = si.withKeyReport.run(srcs).get_!
+        k.report
+      }
 
     }
   }
