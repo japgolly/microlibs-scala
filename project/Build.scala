@@ -97,13 +97,13 @@ object Microlibs {
     Project("JVM", file(".rootJVM"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJVM, macroUtilsJVM, nameFnJVM, nonemptyJVM, recursionJVM, scalazExtJVM, stdlibExtJVM, testUtilJVM)
+        adtMacrosJVM, configJVM, macroUtilsJVM, nameFnJVM, nonemptyJVM, recursionJVM, scalazExtJVM, stdlibExtJVM, testUtilJVM)
 
   lazy val rootJS =
     Project("JS", file(".rootJS"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJS, macroUtilsJS, nameFnJS, nonemptyJS, recursionJS, scalazExtJS, stdlibExtJS, testUtilJS)
+        adtMacrosJS, configJS, macroUtilsJS, nameFnJS, nonemptyJS, recursionJS, scalazExtJS, stdlibExtJS, testUtilJS)
 
   // ===================================================================================================================
 
@@ -114,6 +114,19 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
     .dependsOn(macroUtils, nonempty)
     .settings(moduleName := "adt-macros")
+
+  lazy val configJVM = config.jvm
+  lazy val configJS  = config.js
+  lazy val config = crossProject
+    .configureCross(commonSettings, publicationSettings, utestSettings)
+    // TODO Really? ↓
+    .dependsOn(nonempty, recursion, stdlibExt)
+    .dependsOn(testUtil % "test->compile")
+    .settings(
+      libraryDependencies ++= Seq(
+        "org.scalaz"                 %%% "scalaz-core"   % Ver.Scalaz,
+        "org.scalaz"                 %%% "scalaz-effect" % Ver.Scalaz,
+        "com.github.japgolly.univeq" %%% "univeq-scalaz" % Ver.UnivEq))
 
   lazy val macroUtilsJVM = macroUtils.jvm
   lazy val macroUtilsJS  = macroUtils.js
