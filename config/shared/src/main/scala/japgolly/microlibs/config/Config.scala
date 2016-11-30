@@ -387,6 +387,9 @@ final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
                            used: Map[Key, Map[SourceName, ConfigValue]],
                            unused: Map[Key, Map[SourceName, ConfigValue]]) {
 
+  def ignoreUnusedKeys(f: String => Boolean): KeyReport =
+    copy(unused = unused.filterKeys(k => !f(k.value)))
+
   private def table(map: Map[Key, Map[SourceName, ConfigValue]]): String = {
     val header: Vector[String] =
       "Key" +: sourcesHighToLowPri.map(_.value)
@@ -394,7 +397,7 @@ final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
     val valueRows: List[Vector[String]] =
       map.keys.toList.sortBy(_.value).map(k =>
         k.value +: sourcesHighToLowPri.map(s => map.get(k).flatMap(_ get s) getOrElse ConfigValue.NotFound).map {
-          case ConfigValue.Found(v) => v
+          case ConfigValue.Found(v) => v.replace("\n", "\\n")
           case ConfigValue.NotFound => ""
           case ConfigValue.Error(err, None) => s"¡$err!"
           case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
