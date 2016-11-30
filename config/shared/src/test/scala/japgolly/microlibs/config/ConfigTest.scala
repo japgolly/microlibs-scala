@@ -88,13 +88,14 @@ object ConfigTest extends TestSuite {
     }
 
     'report {
-      val si: Config[(String, Int)] = Config.need[String]("s") tuple Config.need[Int]("i")
+      val si: Config[Unit] = (Config.need[String]("s") |@| Config.need[Int]("i") |@| Config.get[Int]("no"))((_,_,_) => ())
       val expectedReport =
         s"""
            |+-----+-----+------+
            || Key | S1  | S2   |
            |+-----+-----+------+
            || i   | 3   | X300 |
+           || no  |     |      |
            || s   | hey |      |
            |+-----+-----+------+
          """.stripMargin.trim + "\n"
@@ -124,7 +125,10 @@ object ConfigTest extends TestSuite {
         * - assertEq((one.withPrefix("b.") tuple two).run(s).get_!, ("B!", "II"))
         * - assertEq((one tuple two).withPrefix("b.").run(s).get_!, ("B!", "B@"))
         * - assertEq((one tuple two.withPrefix("b.")).withPrefix("a.").run(s).get_!, ("A!", "AB-2"))
-
+      }
+      'caseInsensitive {
+        val c = Config.get[String]("S2")
+        assertEq((c tuple c.withCaseInsensitiveKeys).run(srcs).get_!, (None, Some("ah")))
       }
     }
 
