@@ -208,33 +208,45 @@ trait Config[A] {
 
   def step[F[_]](implicit F: Applicative[F]): Config.Step[F, Result[A]]
 
+  def withKeyMod(f: String => String): Config[A] =
+    Config.keyModCompose(f) *> this <* Config.keyModPop
+
+  def withCaseInsensitiveKeys: Config[A] =
+    withKeyMod(_.toLowerCase)
+
+  def withPrefix(prefix: String): Config[A] =
+    withKeyMod(prefix + _)
 }
 
 case class SV(source: SourceName, value: ConfigValue)
 case class XXX[F[_]](highToLowPri: F[Vector[SV]], selected: F[Option[SV]])
+
 object Config {
   private val IdMonad = implicitly[Monad[Id]]
 
   final case class R[F[_]](highToLowPri: Vector[(SourceName, ConfigStore[F])])
 
-  final case class W(usedKeys: Set[Key]) {
-    def ++(w: W): W = W(usedKeys ++ w.usedKeys)
+  final case class S[F[_]](keyModStack: List[Key => Key], queryCache: Map[Key, XXX[F]]) {
+    def keyMod: Key => Key =
+      keyModStack.headOption.getOrElse(identity[Key])
+    def keyModPush(f: Key => Key): S[F] =
+      copy(f :: keyModStack)
+    def keyModPop: S[F] =
+      keyModStack match {
+        case Nil => this
+        case _ :: t => copy(t)
+      }
   }
-  object W {
-    val empty = W(Set.empty)
-  }
-
-  final case class S[F[_]](keyMod: Key => Key, queryCache: Map[Key, XXX[F]])
   object S {
-    def init[F[_]]: S[F] = S(identity[Key], Map.empty)
+    def init[F[_]]: S[F] = S(Nil, Map.empty)
   }
 
-  type Step[F[_], A] = RWS[R[F], W, S[F], F[A]]
+  type Step[F[_], A] = RWS[R[F], Unit, S[F], F[A]]
 
   implicit val inst = new Applicative[Config] {
     override def point[A](a: => A) = new Config[A] {
       override def step[F[_]](implicit F: Applicative[F]) =
-        RWS((r, s) => (W.empty, F.point(Result.Success(a)), s))
+        RWS((r, s) => ((), F.point(Result.Success(a)), s))
     }
     override def map[A, B](fa: Config[A])(f: A => B) = fa map f
     override def ap[A, B](fa: => Config[A])(ff: => Config[A => B]) = new Config[B] {
@@ -242,9 +254,9 @@ object Config {
         val ga = fa.step[F].getF[S[F], R[F]](IdMonad)
         val gf = ff.step[F].getF[S[F], R[F]](IdMonad)
         RWS { (r, s0) =>
-          val (w1, ff, s1) = gf(r, s0)
-          val (w2, fa, s2) = ga(r, s1)
-          (w1 ++ w2, F.compose(Result.inst).ap(fa)(ff), s2)
+          val (_, ff, s1) = gf(r, s0)
+          val (_, fa, s2) = ga(r, s1)
+          ((), F.compose(Result.inst).ap(fa)(ff), s2)
         }
       }
     }
@@ -292,7 +304,7 @@ object Config {
               case Some(SV(n, e: ConfigValue.Error)) => Result.Failure(Map(k -> Some((n, e))))
             }
 
-          (W(Set.empty + k), result, s2)
+          ((), result, s2)
         }
     }
 
@@ -307,7 +319,7 @@ object Config {
 
   def keyReport: Config[KeyReport] =
     new Config[KeyReport] {
-      override def step[F[_]](implicit F: Applicative[F]): Step[F, Result[KeyReport]] =
+      override def step[F[_]](implicit F: Applicative[F]) =
         RWS { (r, s) =>
 
           val omg: F[Vector[(Key, Map[SourceName, ConfigValue])]] =
@@ -326,28 +338,32 @@ object Config {
               Result.Success(
                 KeyReport(r.highToLowPri.map(_._1), used)))
 
-          (W.empty, result, s)
+          ((), result, s)
         }
+    }
+
+  private def keyModTS(f: Key => Key): String => String = s => f(Key(s)).value
+  private def keyModFS(f: String => String): Key => Key = k => Key(f(k.value))
+
+  private[config] def keyModUpdate(f: (String => String) => String => String): Config[Unit] =
+    new Config[Unit] {
+      override def step[F[_]](implicit F: Applicative[F]) =
+        RWS((_, s) => ((), F pure Result.Success(()), s.keyModPush(keyModFS(f(keyModTS(s.keyMod))))))
+    }
+
+  private[config] def keyModCompose(f: String => String): Config[Unit] =
+    keyModUpdate(_ compose f)
+
+  private[config] def keyModPop: Config[Unit] =
+    new Config[Unit] {
+      override def step[F[_]](implicit F: Applicative[F]) =
+        RWS((_, s) => ((), F point Result.Success(()), s.keyModPop))
     }
 }
 
 final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
                            used: Map[Key, Map[SourceName, ConfigValue]]) {
   def report: String = {
-
-//    val sb = new StringBuilder
-//    sb append sourcesHighToLowPri.toIterator.map(_.value).mkString("Key | ", " | ", "")
-//    for (k <- used.keys.toList.sortBy(_.value)) {
-//      val vs = sourcesHighToLowPri.toIterator.map(used(k).apply).map {
-//        case ConfigValue.Found(v) => v
-//        case ConfigValue.NotFound => ""
-//        case ConfigValue.Error(err, None) => s"¡$err!"
-//        case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
-//      }
-//      sb append s"\n${k.value} | ${vs.mkString(" | ")}"
-//    }
-//    sb.toString
-
     val header: Vector[String] =
       "Key" +: sourcesHighToLowPri.map(_.value)
 
@@ -425,40 +441,4 @@ object ResultX {
   final case class Success[+A](value: A) extends ResultX[A] {
     override def toDisjunction = \/-(value)
   }
-}
-
-
-object PAD {
-
-//  sealed abstract class Result[+A]
-//  object Result {
-////    final case class Failure(attempts: NonEmpty[Map[Key, NonEmptyVector[Source]]]) extends Result[Nothing]
-//    final case class FailureRead(key: Key, sources: Vector[SourceName]) extends Result[Nothing]
-//    final case class Value[+A](key: Key, value: A, source: SourceName, overridden: Map[SourceName, A]) extends Result[A]
-//  }
-
-  // ===================================================================================================================
-
-//  import scalaz.syntax.apply._
-//  import ValueReader.Y._
-//  import ValueReader.N._
-//
-//  val fa = Config.get[Boolean]("blah")
-//  val fb = Config.get[Int]("blah", 3)
-//  val fc = Config.need[String]("blah")
-//  val fx: Config[Blah] = (fa |@| fb |@| fc) (Blah.apply)
-//  val blah: Blah =
-//    fx(SOURCES).unsafePerformIO() match {
-//      case Result.Success(x) => x
-//      case Result.Failure(errors) => sys error errors.toString
-//    }
-//
-//  def SOURCES: Sources[IO] =
-//    Source.environment[IO] > Source.propFileOnClasspath[IO]("blah.props") > Source.system[IO]
-//
-//  final case class Blah(ob: Option[Boolean], i: Int, s: String)
-
-  // TODO KeyMod - prefix, case insensitive
-  // .prefix = AddPrefix *> run <* RemovePrefix
-
 }

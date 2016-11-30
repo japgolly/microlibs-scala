@@ -110,7 +110,23 @@ object ConfigTest extends TestSuite {
         val (_, k: KeyReport) = si.withKeyReport.run(srcs).get_!
         assertEq(k.report, expectedReport)
       }
-
     }
+
+    'keyMod {
+      'prefix {
+        val s = Source.manual[Id]("S")(
+          "a.b.1" -> "AB-1", "a.1" -> "A!", "b.1" -> "B!", "1" -> "I",
+          "a.b.2" -> "AB-2", "a.2" -> "A@", "b.2" -> "B@", "2" -> "II")
+        val one = Config.need[String]("1")
+        val two = Config.need[String]("2")
+
+        * - assertEq((one tuple two.withPrefix("b.")).run(s).get_!, ("I", "B@"))
+        * - assertEq((one.withPrefix("b.") tuple two).run(s).get_!, ("B!", "II"))
+        * - assertEq((one tuple two).withPrefix("b.").run(s).get_!, ("B!", "B@"))
+        * - assertEq((one tuple two.withPrefix("b.")).withPrefix("a.").run(s).get_!, ("A!", "AB-2"))
+
+      }
+    }
+
   }
 }
