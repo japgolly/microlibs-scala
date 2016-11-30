@@ -1,7 +1,6 @@
 package japgolly.microlibs.config
 
-import japgolly.microlibs.stdlib_ext.{ParseInt, ParseLong}
-import japgolly.microlibs.stdlib_ext.StdlibExt._
+import japgolly.microlibs.stdlib_ext._, StdlibExt._
 import java.util.Properties
 import java.util.regex.Pattern
 /*
@@ -148,13 +147,13 @@ object ValueReader {
     implicit def readInt(implicit s: ValueReader[String]): ValueReader[Int] =
       s.mapAttempt {
         case ParseInt(i) => \/-(i)
-        case _ => -\/("Not an Int.")
+        case _ => -\/("Int expected.")
       }
 
     implicit def readLong(s: ValueReader[String]): ValueReader[Long] =
       s.mapAttempt {
         case ParseLong(l) => \/-(l)
-        case _ => -\/("Not a Long.")
+        case _ => -\/("Long expected.")
       }
 
     private val RegexTrue = Pattern.compile("^(?:t(?:rue)?|y(?:es)?|1|on|enabled?)$", Pattern.CASE_INSENSITIVE)
@@ -167,7 +166,7 @@ object ValueReader {
         else if (RegexFalse.matcher(s).matches)
           \/-(false)
         else
-          -\/("Not a Boolean.")
+          -\/("Boolean expected.")
       )
   }
 }
@@ -335,18 +334,34 @@ object Config {
 final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
                            used: Map[Key, Map[SourceName, ConfigValue]]) {
   def report: String = {
-    val sb = new StringBuilder
-    sb append sourcesHighToLowPri.toIterator.map(_.value).mkString("Key | ", " | ", "")
-    for (k <- used.keys.toList.sortBy(_.value)) {
-      val vs = sourcesHighToLowPri.toIterator.map(used(k).apply).map {
+
+//    val sb = new StringBuilder
+//    sb append sourcesHighToLowPri.toIterator.map(_.value).mkString("Key | ", " | ", "")
+//    for (k <- used.keys.toList.sortBy(_.value)) {
+//      val vs = sourcesHighToLowPri.toIterator.map(used(k).apply).map {
+//        case ConfigValue.Found(v) => v
+//        case ConfigValue.NotFound => ""
+//        case ConfigValue.Error(err, None) => s"¡$err!"
+//        case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+//      }
+//      sb append s"\n${k.value} | ${vs.mkString(" | ")}"
+//    }
+//    sb.toString
+
+    val header: Vector[String] =
+      "Key" +: sourcesHighToLowPri.map(_.value)
+
+    val valueRows: List[Vector[String]] =
+    used.keys.toList.sortBy(_.value).map(k =>
+      k.value +: sourcesHighToLowPri.map(used(k).apply).map {
         case ConfigValue.Found(v) => v
         case ConfigValue.NotFound => ""
         case ConfigValue.Error(err, None) => s"¡$err!"
         case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
       }
-      sb append s"\n${k.value} | ${vs.mkString(" | ")}"
-    }
-    sb.toString
+    )
+
+    AsciiTable(header :: valueRows)
   }
 
 }
@@ -382,12 +397,34 @@ object Result {
   }
 }
 
-sealed abstract class ResultX[+A]
+sealed abstract class ResultX[+A] {
+  def toDisjunction: String \/ A
+}
 
 object ResultX {
-  final case class PreparationFailure(sourceName: SourceName, error: String) extends ResultX[Nothing]
-  final case class QueryFailure(failures: Map[Key, Option[(SourceName, ConfigValue.Error)]]) extends ResultX[Nothing]
-  final case class Success[+A](value: A) extends ResultX[A]
+  final case class PreparationFailure(sourceName: SourceName, error: String) extends ResultX[Nothing] {
+    override def toDisjunction = -\/(s"Error preparing source [$sourceName]: $error")
+  }
+
+  final case class QueryFailure(failures: Map[Key, Option[(SourceName, ConfigValue.Error)]]) extends ResultX[Nothing] {
+    override def toDisjunction = -\/ {
+      val each = failures.toVector.sortBy(_._1.value.toLowerCase).map {
+        case (Key(k), None) =>
+          s"No value for key [$k]"
+        case (Key(k), Some((SourceName(src), ConfigValue.Error(desc, None)))) =>
+          s"Error reading key [$k] from source [$src]: $desc"
+        case (Key(k), Some((SourceName(src), ConfigValue.Error(desc, Some(v))))) =>
+          s"Error reading key [$k] from source [$src] with value [$v]: $desc"
+      }
+      var errors = "error"
+      if (each.length != 1) errors += "s"
+      s"${each.length} $errors:${each.map("\n  - " + _).mkString}"
+    }
+  }
+
+  final case class Success[+A](value: A) extends ResultX[A] {
+    override def toDisjunction = \/-(value)
+  }
 }
 
 
@@ -421,7 +458,7 @@ object PAD {
 //
 //  final case class Blah(ob: Option[Boolean], i: Int, s: String)
 
-  // TODO Prefixes/KeyMod
+  // TODO KeyMod - prefix, case insensitive
   // .prefix = AddPrefix *> run <* RemovePrefix
 
 }
