@@ -3,6 +3,7 @@ package japgolly.microlibs.config
 import japgolly.microlibs.stdlib_ext._, StdlibExt._
 import java.util.Properties
 import java.util.regex.Pattern
+import scala.collection.JavaConverters._
 /*
 import scalaz.{-\/, \/, \/-}
 import scalaz.{Applicative, Apply, Bind, Monad, RWS}
@@ -30,6 +31,7 @@ object ConfigValue {
 
 trait ConfigStore[F[_]] {
   def apply(key: Key): F[ConfigValue]
+  def bulk(filter: Key => Boolean): F[Map[Key, String]]
 }
 object ConfigStore {
   private def obj = "ConfigStore"
@@ -39,6 +41,7 @@ object ConfigStore {
       override def toString = s"$obj.empty"
       override def hashCode = 0
       override def apply(key: Key) = F.pure(ConfigValue.NotFound)
+      override def bulk(f: Key => Boolean) = F.pure(Map.empty)
     }
 
   def javaProps[F[_]](p: Properties)(implicit F: Applicative[F]): ConfigStore[F] =
@@ -50,6 +53,13 @@ object ConfigStore {
         val r = ConfigValue.option(o)
         F.pure(r)
       }
+      override def bulk(f: Key => Boolean) = F.pure(
+        p.keys()
+          .asScala
+          .map(k => Key(k.toString))
+          .filter(f)
+          .map(k => k -> p.getProperty(k.value))
+          .toMap)
     }
 
   def stringMap[F[_]](m: Map[String, String])(implicit F: Applicative[F]): ConfigStore[F] =
@@ -61,6 +71,10 @@ object ConfigStore {
         val r = ConfigValue.option(o)
         F.pure(r)
       }
+      override def bulk(f: Key => Boolean) = F.pure(m.toIterator
+        .map { case (k, v) => (Key(k), v) }
+        .filter(x => f(x._1))
+        .toMap)
     }
 }
 
@@ -322,21 +336,29 @@ object Config {
       override def step[F[_]](implicit F: Applicative[F]) =
         RWS { (r, s) =>
 
-          val omg: F[Vector[(Key, Map[SourceName, ConfigValue])]] =
-            s.queryCache.toVector.traverse { case (k, x) =>
-              val qwe: F[(Key, Map[SourceName, ConfigValue])] = x.highToLowPri.map(x =>
-                k -> x.toIterator.map(sv => sv.source -> sv.value).toMap)
-              qwe
-            }
-          val omg2: F[Map[Key, Map[SourceName, ConfigValue]]] =
-            omg.map(_.foldLeft[Map[Key, Map[SourceName, ConfigValue]]](Map.empty) {
-              case (q, (k, vs)) => q.modifyValue(k, _.fold(vs)(_ ++ vs))
-            })
+          implicit def semigroupConfigValue: Semigroup[ConfigValue] = Semigroup.firstSemigroup
+          type M = Map[Key, Map[SourceName, ConfigValue]]
+          def emptyM: M = Map.empty
+
+          val fUsed: F[M] =
+            s.queryCache
+              .toVector
+              .traverse { case (k, x) => x.highToLowPri.map(x => k -> x.toIterator.map(sv => sv.source -> sv.value).toMap) }
+              .map(_.foldLeft(emptyM) { case (m, (k, vs)) => m.modifyValue(k, _.fold(vs)(_ ++ vs)) })
+
+          val usedKeys = s.queryCache.keySet
+
+          val fUnused: F[M] =
+            r.highToLowPri.traverse { case (src, store) =>
+              store.bulk(!usedKeys.contains(_))
+                .map(_.mapValuesNow(value => Map(src -> ConfigValue.Found(value))))
+            }.map(_.foldLeft(emptyM)(_ |+| _))
+
 
           val result: F[Result[KeyReport]] =
-            omg2.map(used =>
+            F.apply2(fUsed, fUnused)((used, unused) =>
               Result.Success(
-                KeyReport(r.highToLowPri.map(_._1), used)))
+                KeyReport(r.highToLowPri.map(_._1), used, unused)))
 
           ((), result, s)
         }
@@ -362,27 +384,40 @@ object Config {
 }
 
 final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
-                           used: Map[Key, Map[SourceName, ConfigValue]]) {
-  def report: String = {
+                           used: Map[Key, Map[SourceName, ConfigValue]],
+                           unused: Map[Key, Map[SourceName, ConfigValue]]) {
+
+  private def table(map: Map[Key, Map[SourceName, ConfigValue]]): String = {
     val header: Vector[String] =
       "Key" +: sourcesHighToLowPri.map(_.value)
 
     val valueRows: List[Vector[String]] =
-    used.keys.toList.sortBy(_.value).map(k =>
-      k.value +: sourcesHighToLowPri.map(used(k).apply).map {
-        case ConfigValue.Found(v) => v
-        case ConfigValue.NotFound => ""
-        case ConfigValue.Error(err, None) => s"¡$err!"
-        case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
-      }
-    )
-
+      map.keys.toList.sortBy(_.value).map(k =>
+        k.value +: sourcesHighToLowPri.map(s => map.get(k).flatMap(_ get s) getOrElse ConfigValue.NotFound).map {
+          case ConfigValue.Found(v) => v
+          case ConfigValue.NotFound => ""
+          case ConfigValue.Error(err, None) => s"¡$err!"
+          case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+        }
+      )
     AsciiTable(header :: valueRows)
   }
 
+  def reportUsed: String = table(used)
+  def reportUnused: String = table(unused)
+
+  def report: String =
+    s"""
+       !Used keys (${used.size}):
+       !$reportUsed
+       !
+       !Unused keys (${unused.size}):
+       !$reportUnused
+     """.stripMargin('!')
+
+  // TODO filter in/out {un,}used
+  // TODO password
 }
-// filter in/out {un,}used
-// password
 
 
 sealed abstract class Result[+A] {

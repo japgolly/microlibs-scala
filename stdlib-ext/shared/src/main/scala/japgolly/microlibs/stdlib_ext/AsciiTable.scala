@@ -77,6 +77,6 @@ object AsciiTable {
     }
 
     doMake(0)
-    sb.toString()
+    sb.dropRight(NL.length).toString()
   }
 }

@@ -13,14 +13,15 @@ object ConfigTest extends TestSuite {
 
   implicit def equalResultX[A] = scalaz.Equal.equalA[ResultX[A]]
 
-  val src1 = Source.manual[Id]("S1")("i" -> "3", "s" -> "hey")
-  val src2 = Source.manual[Id]("S2")("i" -> "X300", "i2" -> "22", "s2" -> "ah")
+  val src1 = Source.manual[Id]("S1")("in" -> "100", "i" -> "3", "s" -> "hey", "dur3m" -> "3 min")
+  val src2 = Source.manual[Id]("S2")("in" -> "200", "i" -> "X300", "i2" -> "22", "s2" -> "ah")
 
   val srcs: Sources[Id] =
      src1 > src2
 
   val srcE = Source.point[Id]("SE", new ConfigStore[Id] {
-    def apply(key: Key) = ConfigValue.Error("This source is fake!", None)
+    override def apply(key: Key) = ConfigValue.Error("This source is fake!", None)
+    override def bulk(f: Key => Boolean) = Map.empty
   })
 
   implicit class ResultXExt[A](private val self: ResultX[A]) extends AnyVal {
@@ -89,7 +90,7 @@ object ConfigTest extends TestSuite {
 
     'report {
       val si: Config[Unit] = (Config.need[String]("s") |@| Config.need[Int]("i") |@| Config.get[Int]("no"))((_,_,_) => ())
-      val expectedReport =
+      val expectUsed =
         s"""
            |+-----+-----+------+
            || Key | S1  | S2   |
@@ -98,19 +99,39 @@ object ConfigTest extends TestSuite {
            || no  |     |      |
            || s   | hey |      |
            |+-----+-----+------+
-         """.stripMargin.trim + "\n"
-      "*>" - {
+         """.stripMargin.trim
+
+      val expectUnused =
+        s"""
+           |+-------+-------+-----+
+           || Key   | S1    | S2  |
+           |+-------+-------+-----+
+           || dur3m | 3 min |     |
+           || i2    |       | 22  |
+           || in    | 100   | 200 |
+           || s2    |       | ah  |
+           |+-------+-------+-----+
+         """.stripMargin.trim
+
+      'used {
+        "*>" - {
+          val k: KeyReport = (si *> Config.keyReport).run(srcs).get_!
+          assertEq(k.reportUsed, expectUsed)
+        }
+        "*> <*" - {
+          val k: KeyReport = (si *> Config.keyReport <* Config.need[Int]("i2")).run(srcs).get_!
+          assertEq(k.reportUsed, expectUsed)
+        }
+        'with {
+          val (_, k: KeyReport) = si.withKeyReport.run(srcs).get_!
+          assertEq(k.reportUsed, expectUsed)
+        }
+      }
+      'unused {
         val k: KeyReport = (si *> Config.keyReport).run(srcs).get_!
-        assertEq(k.report, expectedReport)
+        assertEq(k.reportUnused, expectUnused)
       }
-      "*> <*" - {
-        val k: KeyReport = (si *> Config.keyReport <* Config.need[Int]("i2")).run(srcs).get_!
-        assertEq(k.report, expectedReport)
-      }
-      'with {
-        val (_, k: KeyReport) = si.withKeyReport.run(srcs).get_!
-        assertEq(k.report, expectedReport)
-      }
+      'combined - (si *> Config.keyReport).run(srcs).get_!.report
     }
 
     'keyMod {
