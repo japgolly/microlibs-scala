@@ -11,7 +11,7 @@ import ValueReader.N._
 
 object ConfigTest extends TestSuite {
 
-  implicit def equalResultX[A] = scalaz.Equal.equalA[ResultX[A]]
+  implicit def equalResultX[A] = scalaz.Equal.equalA[ConfigResult[A]]
 
   val src1 = Source.manual[Id]("S1")("in" -> "100", "i" -> "3", "s" -> "hey", "dur3m" -> "3 min")
   val src2 = Source.manual[Id]("S2")("in" -> "200", "i" -> "X300", "i2" -> "22", "s2" -> "ah")
@@ -21,12 +21,12 @@ object ConfigTest extends TestSuite {
 
   val srcE = Source.point[Id]("SE", new ConfigStore[Id] {
     override def apply(key: Key) = ConfigValue.Error("This source is fake!", None)
-    override def bulk(f: Key => Boolean) = Map.empty
+    override def getBulk(f: Key => Boolean) = Map.empty
   })
 
-  implicit class ResultXExt[A](private val self: ResultX[A]) extends AnyVal {
+  implicit class ResultXExt[A](private val self: ConfigResult[A]) extends AnyVal {
     def get_! : A = self match {
-      case ResultX.Success(a) => a
+      case ConfigResult.Success(a) => a
       case x => fail(s"Expected success, got: $x")
     }
   }
@@ -34,31 +34,31 @@ object ConfigTest extends TestSuite {
   override def tests = TestSuite {
 
     'findFirst -
-      assertEq(Config.need[String]("s").run(srcs), ResultX.Success("hey"))
+      assertEq(Config.need[String]("s").run(srcs), ConfigResult.Success("hey"))
 
     'findSecond -
-      assertEq(Config.need[Int]("i2").run(srcs), ResultX.Success(22))
+      assertEq(Config.need[Int]("i2").run(srcs), ConfigResult.Success(22))
 
     'notFound -
-      assertEq(Config.get[Int]("notfound").run(srcs), ResultX.Success(Option.empty[Int]))
+      assertEq(Config.get[Int]("notfound").run(srcs), ConfigResult.Success(Option.empty[Int]))
 
     'missing1 -
-      assertEq(Config.need[Int]("missing").run(srcs), ResultX.QueryFailure(Map(Key("missing") -> None)))
+      assertEq(Config.need[Int]("missing").run(srcs), ConfigResult.QueryFailure(Map(Key("missing") -> None)))
 
     'missing2 -
       assertEq(
         (Config.need[Int]("no1") tuple Config.need[Int]("no2")).run(srcs),
-        ResultX.QueryFailure(Map(Key("no1") -> None, Key("no2") -> None)))
+        ConfigResult.QueryFailure(Map(Key("no1") -> None, Key("no2") -> None)))
 
     'valueFail1 -
       assertEq(
         Config.need[Int]("s").run(srcs),
-        ResultX.QueryFailure(Map(Key("s") -> Some((src1.name, ConfigValue.Error("Int expected.", Some("hey")))))))
+        ConfigResult.QueryFailure(Map(Key("s") -> Some((src1.name, ConfigValue.Error("Int expected.", Some("hey")))))))
 
     'valueFail2 -
       assertEq(
         Config.need[Int]("s2").run(srcs),
-        ResultX.QueryFailure(Map(Key("s2") -> Some((src2.name, ConfigValue.Error("Int expected.", Some("ah")))))))
+        ConfigResult.QueryFailure(Map(Key("s2") -> Some((src2.name, ConfigValue.Error("Int expected.", Some("ah")))))))
 
     'errorMsg {
       'notFound - assertEq(Config.need[Int]("QQ").run(srcs).toDisjunction, -\/(
@@ -115,20 +115,20 @@ object ConfigTest extends TestSuite {
 
       'used {
         "*>" - {
-          val k: KeyReport = (si *> Config.keyReport).run(srcs).get_!
+          val k: Report = (si *> Config.keyReport).run(srcs).get_!
           assertEq(k.reportUsed, expectUsed)
         }
         "*> <*" - {
-          val k: KeyReport = (si *> Config.keyReport <* Config.need[Int]("i2")).run(srcs).get_!
+          val k: Report = (si *> Config.keyReport <* Config.need[Int]("i2")).run(srcs).get_!
           assertEq(k.reportUsed, expectUsed)
         }
         'with {
-          val (_, k: KeyReport) = si.withKeyReport.run(srcs).get_!
+          val (_, k: Report) = si.withReport.run(srcs).get_!
           assertEq(k.reportUsed, expectUsed)
         }
       }
       'unused {
-        val k: KeyReport = (si *> Config.keyReport).run(srcs).get_!
+        val k: Report = (si *> Config.keyReport).run(srcs).get_!
         assertEq(k.reportUnused, expectUnused)
       }
 //      'combined - (si *> Config.keyReport).run(srcs).get_!.report
@@ -136,7 +136,7 @@ object ConfigTest extends TestSuite {
         // AWS_SECRET_KEY
         // *password*
         val srcs2 = Source.manual[Id]("BLAR")("user.language" -> "omg!") > srcs > Source.environment[Id] > Source.system[Id]
-        (si *> Config.need[String]("user.name") *> Config.keyReport).run(srcs2).get_!
+        (si *> Config.get[String]("user.name") *> Config.keyReport).run(srcs2).get_!
           .report
       }
     }
