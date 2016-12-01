@@ -360,14 +360,20 @@ object Config {
           val result: F[Result[KeyReport]] =
             F.apply2(fUsed, fUnused)((used, unused) =>
               Result.Success(
-                KeyReport(r.highToLowPri.map(_._1), used, unused, KeyReport.Filter.defaultUnused)))
+                KeyReport(
+                  r.highToLowPri.map(_._1),
+                  used,
+                  unused,
+                  KeyReport.ValueFormatter.default,
+                  KeyReport.Filter.defaultUnused,
+                  Some(64))))
 
           ((), result, s)
         }
     }
 
-  private def keyModTS(f: Key => Key): String => String = s => f(Key(s)).value
-  private def keyModFS(f: String => String): Key => Key = k => Key(f(k.value))
+  private[config] def keyModTS(f: Key => Key): String => String = s => f(Key(s)).value
+  private[config] def keyModFS(f: String => String): Key => Key = k => Key(f(k.value))
 
   private[config] def keyModUpdate(f: (String => String) => String => String): Config[Unit] =
     new Config[Unit] {
@@ -385,7 +391,11 @@ object Config {
     }
 }
 
+import Config.{keyModTS, keyModFS}
+
 object KeyReport {
+  import scala.Console._
+
   final case class Filter(allow: (Key, Map[SourceName, ConfigValue]) => Boolean) extends AnyVal {
     def unary_! : Filter = Filter(!allow)
     def &&(f: Filter): Filter = Filter(allow && f.allow)
@@ -413,18 +423,60 @@ object KeyReport {
     def defaultUnused: Filter =
       ignoreUnusedBySoleSource(Source.systemName) &&
       ignoreUnusedByKey(_.value startsWith "LESS_TERMCAP") &&
-      ignoreUnusedKeys("PATH", "PROMPT", "PS1")
+      ignoreUnusedKeys("PROMPT", "PS1")
+  }
+
+  case class ValueFormatter(fmt: (Key, String) => String) extends AnyVal {
+    def +(f: ValueFormatter): ValueFormatter =
+      ValueFormatter((k, s) => f.fmt(k, fmt(k, s)))
+
+    def mapKeys(f: String => String): ValueFormatter = {
+      val g = keyModFS(f)
+      ValueFormatter((k, s) => fmt(g(k), s))
+    }
+  }
+  object ValueFormatter {
+    def identity = ValueFormatter((_, s) => s)
+
+    def escape26: ValueFormatter =
+      ValueFormatter((_, s) => s.toIterator.flatMap {
+        case '\b' => "\\b"
+        case '\n' => "\\n"
+        case '\r' => "\\r"
+        case '\t' => "\\t"
+        case '\f' => "\\f"
+        case c => c.toString
+      }.mkString)
+
+    def limitWidth(maxLen: Int): ValueFormatter =
+      ValueFormatter((_, s) => if (s.length <= maxLen) s else s.take(maxLen - 1) + "…")
+
+    def obfuscateKey(f: String => Boolean): ValueFormatter =
+      ValueFormatter((k, s) => if (f(k.value)) s"$YELLOW<# %08X #>$RESET".format(s.##) else s)
+
+    def default =
+      escape26 +
+      (obfuscateKey(_ contains "password") + obfuscateKey(_ contains "secret")).mapKeys(_.toLowerCase)
+
+    // .replace("\n", "\\n")
   }
 }
 final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
                            used: Map[Key, Map[SourceName, ConfigValue]],
                            unused: Map[Key, Map[SourceName, ConfigValue]],
-                           unusedFilter: KeyReport.Filter) {
-  import KeyReport.Filter
+                           valueFmt: KeyReport.ValueFormatter,
+                           unusedFilter: KeyReport.Filter,
+                           maxValueLen: Option[Int]) {
+  import scala.Console._
+  import KeyReport._
+
+  val valueFmt2 = maxValueLen.fold(valueFmt)(ValueFormatter.limitWidth(_) + valueFmt)
 
   private def table(map: Map[Key, Map[SourceName, ConfigValue]], filter: Filter): String = {
     val header: Vector[String] =
       "Key" +: sourcesHighToLowPri.map(_.value)
+
+    def fmtError(e: String) = s"$RED$e$RESET"
 
     val valueRows: List[Vector[String]] =
       map.iterator
@@ -432,11 +484,12 @@ final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
         .toList
         .sortBy(_._1.value)
         .map { case (k, vs) =>
+          def fmtValue(v: String) = valueFmt2.fmt(k, v)
           k.value +: sourcesHighToLowPri.map(vs.getOrElse(_, ConfigValue.NotFound)).map {
-            case ConfigValue.Found(v) => v.replace("\n", "\\n")
+            case ConfigValue.Found(v) => fmtValue(v)
             case ConfigValue.NotFound => ""
-            case ConfigValue.Error(err, None) => s"¡$err!"
-            case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+            case ConfigValue.Error(err, None) => fmtError(err)
+            case ConfigValue.Error(err, Some(v)) => s"${fmtValue(v)} ${fmtError(err)}"
           }
         }
     AsciiTable(header :: valueRows)

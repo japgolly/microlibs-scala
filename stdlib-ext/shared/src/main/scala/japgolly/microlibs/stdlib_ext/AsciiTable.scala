@@ -1,6 +1,7 @@
 package japgolly.microlibs.stdlib_ext
 
 import scala.annotation.tailrec
+import StdlibExt._
 
 /**
  * Taken from
@@ -25,7 +26,7 @@ object AsciiTable {
             separateDataRows: Boolean = false): String = {
 
     val rowCount = table.size
-    val maxColLengths = table.transpose.map(_.map(s => if (s eq null) 4 else s.length).max)
+    val maxColLengths = table.transpose.map(_.map(s => if (s eq null) 4 else s.removeAnsiEscapeCodes.length).max)
     val sb = new StringBuilder
 
     @tailrec
@@ -60,7 +61,7 @@ object AsciiTable {
         var cell = row(column)
         if (cell eq null)
           cell = "null"
-        val ws = maxColLengths(column) - cell.length + 2
+        val ws = maxColLengths(column) - cell.removeAnsiEscapeCodes.length + 2
         if (centre(c)) {
           sb.append(" " * (ws/2))
           sb.append(cell)
