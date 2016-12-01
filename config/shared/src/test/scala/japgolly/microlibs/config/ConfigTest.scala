@@ -6,8 +6,7 @@ import scalaz.std.AllInstances._
 import scalaz.syntax.applicative._
 import scalaz.Scalaz.Id
 import utest._
-import ValueReader.Y._
-import ValueReader.N._
+import ValueReader.Implicits.Defaults._
 
 object ConfigTest extends TestSuite {
 

@@ -1,10 +1,10 @@
 package japgolly.microlibs.config
 
-import japgolly.microlibs.config.ValueReader.Y._
 import japgolly.microlibs.testutil.TestUtil._
 import scalaz.Equal
 import scalaz.Scalaz.Id
 import utest._
+import ValueReader.Implicits.Defaults._
 
 object ConfigJvmTest extends TestSuite {
 
