@@ -132,17 +132,13 @@ object ConfigTest extends TestSuite {
         assertEq(k.reportUnused, expectUnused)
       }
 //      'combined - (si *> Config.keyReport).run(srcs).get_!.report
-      'combined - println(
+      'combined - println {
         // AWS_SECRET_KEY
         // *password*
-        (si *> Config.keyReport).run(srcs > Source.environment[Id] > Source.system[Id]).get_!
-          .ignoreUnusedKeys(_ startsWith "LESS_TERMCAP")
-          .ignoreUnusedKeys(_ == "PATH")
-          .ignoreUnusedKeys(_ == "PROMPT")
-          .ignoreUnusedKeys(_ == "java.library.path")
-          .ignoreUnusedKeys(_ == "sun.boot.class.path")
+        val srcs2 = Source.manual[Id]("BLAR")("user.language" -> "omg!") > srcs > Source.environment[Id] > Source.system[Id]
+        (si *> Config.need[String]("user.name") *> Config.keyReport).run(srcs2).get_!
           .report
-      )
+      }
     }
 
     'keyMod {

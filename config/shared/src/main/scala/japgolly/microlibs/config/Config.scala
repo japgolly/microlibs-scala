@@ -108,8 +108,10 @@ object Source {
   def environment[F[_]](implicit F: Applicative[F]): Source[F] =
     point("Environment", ConfigStore.stringMap(sys.env))
 
+  def systemName = SourceName("System")
+
   def system[F[_]](implicit F: Applicative[F]): Source[F] =
-    Source[F](SourceName("System"), F.point {
+    Source[F](systemName, F.point {
       def cfg() = ConfigStore.javaProps[F](System.getProperties())
       \/.fromTryCatchNonFatal(cfg()).leftMap(_.getMessage)
     })
@@ -358,7 +360,7 @@ object Config {
           val result: F[Result[KeyReport]] =
             F.apply2(fUsed, fUnused)((used, unused) =>
               Result.Success(
-                KeyReport(r.highToLowPri.map(_._1), used, unused)))
+                KeyReport(r.highToLowPri.map(_._1), used, unused, KeyReport.Filter.defaultUnused)))
 
           ((), result, s)
         }
@@ -383,31 +385,65 @@ object Config {
     }
 }
 
+object KeyReport {
+  final case class Filter(allow: (Key, Map[SourceName, ConfigValue]) => Boolean) extends AnyVal {
+    def unary_! : Filter = Filter(!allow)
+    def &&(f: Filter): Filter = Filter(allow && f.allow)
+    def ||(f: Filter): Filter = Filter(allow || f.allow)
+    def addExclusion(f: Filter): Filter = Filter(allow && !f.allow)
+  }
+  object Filter {
+    def allowAll: Filter = Filter((_, _) => true)
+
+    def exclude(f: (Key, Map[SourceName, ConfigValue]) => Boolean): Filter =
+      Filter(!f)
+
+    def ignoreUnusedBySoleSource(s: SourceName): Filter =
+      ignoreUnusedBySoleSource(_ == s)
+
+    def ignoreUnusedBySoleSource(f: SourceName => Boolean): Filter =
+      exclude((_, vs) => vs.size == 1 && f(vs.keysIterator.next()))
+
+    def ignoreUnusedKeys(keys: String*): Filter =
+      ignoreUnusedByKey(keys.toIterator.map(Key).toSet.contains)
+
+    def ignoreUnusedByKey(f: Key => Boolean): Filter =
+      exclude((k, _) => f(k))
+
+    def defaultUnused: Filter =
+      ignoreUnusedBySoleSource(Source.systemName) &&
+      ignoreUnusedByKey(_.value startsWith "LESS_TERMCAP") &&
+      ignoreUnusedKeys("PATH", "PROMPT", "PS1")
+  }
+}
 final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
                            used: Map[Key, Map[SourceName, ConfigValue]],
-                           unused: Map[Key, Map[SourceName, ConfigValue]]) {
+                           unused: Map[Key, Map[SourceName, ConfigValue]],
+                           unusedFilter: KeyReport.Filter) {
+  import KeyReport.Filter
 
-  def ignoreUnusedKeys(f: String => Boolean): KeyReport =
-    copy(unused = unused.filterKeys(k => !f(k.value)))
-
-  private def table(map: Map[Key, Map[SourceName, ConfigValue]]): String = {
+  private def table(map: Map[Key, Map[SourceName, ConfigValue]], filter: Filter): String = {
     val header: Vector[String] =
       "Key" +: sourcesHighToLowPri.map(_.value)
 
     val valueRows: List[Vector[String]] =
-      map.keys.toList.sortBy(_.value).map(k =>
-        k.value +: sourcesHighToLowPri.map(s => map.get(k).flatMap(_ get s) getOrElse ConfigValue.NotFound).map {
-          case ConfigValue.Found(v) => v.replace("\n", "\\n")
-          case ConfigValue.NotFound => ""
-          case ConfigValue.Error(err, None) => s"¡$err!"
-          case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+      map.iterator
+        .filter(filter.allow.tupled)
+        .toList
+        .sortBy(_._1.value)
+        .map { case (k, vs) =>
+          k.value +: sourcesHighToLowPri.map(vs.getOrElse(_, ConfigValue.NotFound)).map {
+            case ConfigValue.Found(v) => v.replace("\n", "\\n")
+            case ConfigValue.NotFound => ""
+            case ConfigValue.Error(err, None) => s"¡$err!"
+            case ConfigValue.Error(err, Some(v)) => s"$v ¡$err!"
+          }
         }
-      )
     AsciiTable(header :: valueRows)
   }
 
-  def reportUsed: String = table(used)
-  def reportUnused: String = table(unused)
+  def reportUsed: String = table(used, Filter.allowAll)
+  def reportUnused: String = table(unused, unusedFilter)
 
   def report: String =
     s"""
@@ -418,7 +454,9 @@ final case class KeyReport(sourcesHighToLowPri: Vector[SourceName],
        !$reportUnused
      """.stripMargin('!')
 
-  // TODO filter in/out {un,}used
+  def filterUnused(f: Filter): KeyReport =
+    copy(unusedFilter = unusedFilter && f)
+
   // TODO password
 }
 
