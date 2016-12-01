@@ -87,6 +87,16 @@ object ConfigTest extends TestSuite {
       }
     }
 
+    'ensure {
+      'ok - assertEq(
+        Config.need("in")(ValueReader[Int].ensure(_ < 150, _ => "Must be < 150.")).run(srcs),
+        ConfigResult.Success(100))
+
+      'ko - assertEq(
+        Config.need("in")(ValueReader[Int].ensure(_ > 150, _ => "Must be > 150.")).run(srcs),
+        ConfigResult.QueryFailure(Map(Key("in") -> Some((src1.name, ConfigValue.Error("Must be > 150.", Some("100")))))))
+    }
+
     'report {
       val si: Config[Unit] = (Config.need[String]("s") |@| Config.need[Int]("i") |@| Config.get[Int]("no"))((_,_,_) => ())
       val expectUsed =

@@ -4,18 +4,23 @@ import japgolly.microlibs.stdlib_ext._
 import java.util.regex.Pattern
 import scalaz.{-\/, \/, \/-}
 
-final case class ValueReader[A](read: ConfigValue.Found => String \/ A) extends AnyVal {
+final class ValueReader[A](val read: ConfigValue.Found => String \/ A) extends AnyVal {
   def map[B](f: A => B): ValueReader[B] =
-    ValueReader(read(_) map f)
+    new ValueReader(read(_) map f)
 
   def mapAttempt[B](f: A => String \/ B): ValueReader[B] =
-    ValueReader(read(_) flatMap f)
+    new ValueReader(read(_) flatMap f)
 
   def flatMap[B](f: A => ValueReader[B]): ValueReader[B] =
-    ValueReader(v => read(v).flatMap(f(_) read v))
+    new ValueReader(v => read(v).flatMap(f(_) read v))
+
+  def ensure(test: A => Boolean, errorMsg: A => String): ValueReader[A] =
+    new ValueReader(read(_).flatMap(a => if (test(a)) \/-(a) else -\/(errorMsg(a))))
 }
 
 object ValueReader {
+
+  @inline def apply[A](implicit r: ValueReader[A]) = r
 
   object Implicits {
 
@@ -25,7 +30,7 @@ object ValueReader {
     object StringAsIs extends StringAsIs
     trait StringAsIs {
       implicit val readString: ValueReader[String] =
-        ValueReader(v => \/-(v.value))
+        new ValueReader(v => \/-(v.value))
     }
 
     object StringDefault extends StringDefault
