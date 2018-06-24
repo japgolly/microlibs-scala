@@ -6,7 +6,6 @@
 val VerMicrolibs = "1.xxx"
 
 "com.github.japgolly.microlibs" %% "adt-macros"  % VerMicrolibs
-"com.github.japgolly.microlibs" %% "config"      % VerMicrolibs
 "com.github.japgolly.microlibs" %% "macro-utils" % VerMicrolibs
 "com.github.japgolly.microlibs" %% "name-fn"     % VerMicrolibs
 "com.github.japgolly.microlibs" %% "nonempty"    % VerMicrolibs
