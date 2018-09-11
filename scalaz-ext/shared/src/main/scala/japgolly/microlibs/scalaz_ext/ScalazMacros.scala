@@ -26,7 +26,7 @@ class ScalazMacros(val c: blackbox.Context) extends MacroUtils {
       q"_root_.scalaz.Equal.equal[$T]((_, _) => true)"
 
     def caseClass1up(params: List[Symbol]): Tree = {
-      val init = Init()
+      val init = new Init("i$" + _)
       var cmps = Vector.empty[Tree]
       for (p <- params) {
         val (pn, pt) = nameAndType(T, p)
@@ -41,7 +41,7 @@ class ScalazMacros(val c: blackbox.Context) extends MacroUtils {
     }
 
     def adt: Tree = {
-      val init = Init()
+      val init = new Init("i$" + _)
       val cases = crawlADT[CaseDef](T, p => {
         val pt = determineAdtType(T, p)
         tryInferImplicit(appliedType(equal, pt)).map { et =>
