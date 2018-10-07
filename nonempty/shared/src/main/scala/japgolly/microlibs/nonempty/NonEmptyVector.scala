@@ -215,6 +215,13 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
         r
       }
     }
+
+  def mkString(start: String, sep: String, end: String): String =
+    whole.mkString(start, sep, end)
+
+  def mkString(sep: String): String = mkString("", sep, "")
+
+  def mkString: String = mkString("")
 }
 
 // =====================================================================================================================
