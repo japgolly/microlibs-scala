@@ -3,8 +3,8 @@ package japgolly.microlibs.stdlib_ext
 import utest._
 import StdlibExt._
 
-object ScalaExtTest extends TestSuite {
-  override def tests = TestSuite {
+object StdlibExtTest extends TestSuite {
+  override def tests = Tests {
 
     "indent(int)" - {
       assert("a".indent(2) == "  a")
@@ -26,6 +26,25 @@ object ScalaExtTest extends TestSuite {
         } else
           assert(r.isEmpty)
       }
+    }
+
+    "regex.collectAllIn" - {
+      val r = "[0-9]".r
+      def test(input: String)(expectedMatches: Int*): Unit = {
+        val (init, last) = r.collectAllIn(input)
+        val all = (init.flatMap(x => x._1 :: x._2.group(0) :: Nil) :+ last).mkString("")
+        val matches = init.map(_._2.group(0).toInt)
+        assert(all == input, matches == expectedMatches.toList)
+      }
+
+      "a" - test("a")()
+      "1" - test("1")(1)
+      "1 2" - test("1 2")(1, 2)
+      "1 a 2" - test("1 a 2")(1, 2)
+      "1 a 2 y" - test("1 a 2 y")(1, 2)
+      "x 1 a 2" - test("x 1 a 2")(1, 2)
+      "x 1 a 2 y" - test("x 1 a 2 y")(1, 2)
+      "xx 11 aa 22 yy" - test("xx 11 aa 22 yy")(1, 1, 2, 2)
     }
   }
 }
