@@ -170,7 +170,7 @@ abstract class MacroUtils {
    * - Type must be sealed.
    * - Type must be abstract or a trait.
    */
-  final def findConcreteTypes(tpe: Type, f: FindSubClasses): Set[ClassSymbol] = {
+  final def findConcreteTypes(tpe: Type, f: FindSubClasses): Vector[ClassSymbol] = {
      val sym = ensureValidAdtBase(tpe)
 
     def findSubClasses(p: ClassSymbol): Set[ClassSymbol] = {
@@ -191,20 +191,22 @@ abstract class MacroUtils {
       }
     }
 
-    findSubClasses(sym)
+    val set = findSubClasses(sym)
+
+    deterministicOrderC(set)
   }
 
-  final def findConcreteTypesNE(tpe: Type, f: FindSubClasses): Set[ClassSymbol] = {
+  final def findConcreteTypesNE(tpe: Type, f: FindSubClasses): Vector[ClassSymbol] = {
     val r = findConcreteTypes(tpe, f)
     if (r.isEmpty)
       fail(s"Unable to find concrete types for ${tpe.typeSymbol.name}.")
     r
   }
 
-  final def findConcreteAdtTypes(tpe: Type, f: FindSubClasses): Set[Type] =
+  final def findConcreteAdtTypes(tpe: Type, f: FindSubClasses): Vector[Type] =
     findConcreteTypes(tpe, f) map (determineAdtType(tpe, _))
 
-  final def findConcreteAdtTypesNE(tpe: Type, f: FindSubClasses): Set[Type] =
+  final def findConcreteAdtTypesNE(tpe: Type, f: FindSubClasses): Vector[Type] =
     findConcreteTypesNE(tpe, f) map (determineAdtType(tpe, _))
 
   /**
@@ -464,7 +466,6 @@ abstract class MacroUtils {
 
   def deterministicOrderC(ts: TraversableOnce[ClassSymbol]): Vector[ClassSymbol] =
     ts.toVector.sortBy(_.fullName)
-
 
   final def replaceMacroMethod(newMethod: String) =
     c.macroApplication match {

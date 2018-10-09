@@ -152,7 +152,7 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
   def debugAdtValues[T: c.WeakTypeTag]: c.Expr[NonEmptyVector[T]] = implAdtValues(true)
   def implAdtValues[T: c.WeakTypeTag](debug: Boolean): c.Expr[NonEmptyVector[T]] = {
     val T     = weakTypeOf[T]
-    val types = deterministicOrderC(findConcreteTypesNE(T, LeavesOnly))
+    val types = findConcreteTypesNE(T, LeavesOnly)
     if (types.isEmpty)
       fail(s"At least one concrete subtype of $T required.")
 
@@ -181,7 +181,7 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
     if (types.isEmpty)
       fail(s"At least one concrete subtype of $T required.")
 
-    var unseen = types
+    var unseen = types.toSet
     for ((_case, ind) <- valueFn.iterator.map(_._1).zipWithIndex) {
       val _type = _case.fold(_.tpe, identity)
       val matches = unseen.filter(_ <:< _type)
