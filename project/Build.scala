@@ -17,17 +17,17 @@ object Microlibs {
     Lib.publicationSettings(ghProject)
 
   object Ver {
-    val JAMM            = "0.3.2"
-    val JavaTimeScalaJs = "0.2.4"
-    val KindProjector   = "0.9.7"
+    val JAMM            = "0.3.3"
+    val JavaTimeScalaJs = "0.2.5"
+    val KindProjector   = "0.9.10"
     val MacroParadise   = "2.1.1"
     val Monocle         = "1.5.0"
-    val MTest           = "0.5.4"
+    val MTest           = "0.6.7"
     val Nyaya           = "0.8.1"
     val Scala211        = "2.11.12"
-    val Scala212        = "2.12.6"
-    val Scalaz          = "7.2.24"
-    val UnivEq          = "1.0.2"
+    val Scala212        = "2.12.8"
+    val Scalaz          = "7.2.27"
+    val UnivEq          = "1.0.5"
   }
 
   def scalacFlags = Def.setting(
