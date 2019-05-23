@@ -7,7 +7,7 @@ import AdtMacros.{AdtIso, AdtIsoSet}
 
 object AdtMacros {
 
-  type AdtIso[Adt, T] = (Adt => T, T => Adt, NonEmptyVector[Adt], NonEmptyVector[T])
+  type AdtIso[Adt, T] = (Adt => T, PartialFunction[T, Adt], NonEmptyVector[Adt], NonEmptyVector[T])
   def adtIso[Adt, T](f: Adt => T): AdtIso[Adt, T] = macro AdtMacros.quietAdtIso[Adt, T]
   def _adtIso[Adt, T](f: Adt => T): AdtIso[Adt, T] = macro AdtMacros.debugAdtIso[Adt, T]
 
@@ -70,7 +70,7 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
 
     val impl = q"""
       val from: $Adt => $T = $f
-      val to: $T => $Adt = {case ..$toCases}
+      val to: PartialFunction[$T, $Adt] = {case ..$toCases}
       val adts = $SelectNonEmptyVector.varargs[$Adt](..$adtValues)
       val tos = $SelectNonEmptyVector.varargs[$T](..${fromFn.map(_._2)})
       assert(adts.length == tos.length)

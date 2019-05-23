@@ -115,6 +115,8 @@ object AdtMacroTest extends TestSuite {
       assertUnorderedNEV(cs)('a', 'b', 'c')
       for (m <- ms)
         assert(cm(mc(m)) == m)
+
+      assert(cm.isDefinedAt('x') == false)  
     }
 
     'adtIsoSet {
