@@ -44,8 +44,8 @@ object StaticLookupFn {
 
   // ===================================================================================================================
 
-  /** Call .get or .array yourself on the result. */
-  def map[K: UnivEq, V](kvs: TraversableOnce[(K, V)]): Map[K, V] = {
+  /** Call .get or .apply yourself on the result. */
+  private def mkMap[K: UnivEq, V](kvs: TraversableOnce[(K, V)]): Map[K, V] = {
     var m = Map.empty[K, V]
     for ((k, v) <- kvs)
       m.get(k) match {
@@ -55,9 +55,17 @@ object StaticLookupFn {
     m
   }
 
-  /** Call .get or .array yourself on the result. */
-  def mapBy[K: UnivEq, V](vs: TraversableOnce[V])(k: V => K): Map[K, V] =
+  def map[K: UnivEq, V](kvs: TraversableOnce[(K, V)]): K => Option[V] =
+    mkMap(kvs).get
+
+  def mapBy[K: UnivEq, V](vs: TraversableOnce[V])(k: V => K): K => Option[V] =
     map(vs.map(v => k(v) -> v))
+
+  def unsafeMap[K: UnivEq, V](kvs: TraversableOnce[(K, V)]): K => V =
+    mkMap(kvs).apply
+
+  def unsafeMapBy[K: UnivEq, V](vs: TraversableOnce[V])(k: V => K): K => V =
+    unsafeMap(vs.map(v => k(v) -> v))
 
   // ===================================================================================================================
 
