@@ -110,13 +110,6 @@ object Microlibs {
     .dependsOn(macroUtils, nonempty)
     .settings(moduleName := "adt-macros")
 
-  lazy val configJVM = config.jvm
-  lazy val configJS  = config.js
-  lazy val config = crossProject(JVMPlatform, JSPlatform)
-    .configureCross(commonSettings, publicationSettings, utestSettings, useTestUtil)
-    .dependsOn(utils)
-    .settings(libraryDependencies += "org.scalaz" %%% "scalaz-core" % Ver.Scalaz)
-
   lazy val macroUtilsJVM = macroUtils.jvm
   lazy val macroUtilsJS  = macroUtils.js
   lazy val macroUtils = crossProject(JVMPlatform, JSPlatform)
