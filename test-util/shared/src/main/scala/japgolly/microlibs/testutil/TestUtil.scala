@@ -184,6 +184,15 @@ trait TestUtil {
       _fail(s"${BRIGHT_MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] in:$RESET\n$a")
     }
 
+  def assertNotContainsCI(actual: String, expectFrag: String): Unit =
+    assertNotContains(actual.toLowerCase, expectFrag.toLowerCase)
+
+  def assertNotContains(actual: String, expectFrag: String): Unit =
+    if (actual.contains(expectFrag)) {
+      val a = colourMultiline(actual, BRIGHT_CYAN)
+      _fail(s"${BRIGHT_MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] not in:$RESET\n$a")
+    }
+
   def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B): R =
     assertChangeO(None, query, block)(actual)(expect)
 
