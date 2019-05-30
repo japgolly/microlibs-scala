@@ -27,6 +27,7 @@ object Microlibs {
     val Scala211        = "2.11.12"
     val Scala212        = "2.12.8"
     val Scalaz          = "7.2.27"
+    val SourceCode      = "0.1.5"
     val UnivEq          = "1.0.6"
   }
 
@@ -164,7 +165,9 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings)
     .settings(
       moduleName := "test-util",
-      libraryDependencies += "org.scalaz" %%% "scalaz-core" % Ver.Scalaz)
+      libraryDependencies ++= Seq(
+        "org.scalaz" %%% "scalaz-core" % Ver.Scalaz,
+        "com.lihaoyi" %%% "sourcecode" % Ver.SourceCode))
 
   lazy val utilsJVM = utils.jvm
   lazy val utilsJS  = utils.js

@@ -4,6 +4,7 @@ import scala.annotation.tailrec
 import scalaz.Equal
 import scalaz.syntax.equal._
 import scala.io.AnsiColor._
+import sourcecode.Line
 
 private[testutil] object TestUtilColours {
   // scala.Console.BOLD exists but not BRIGHT
@@ -31,10 +32,10 @@ import TestUtilColours._
 object TestUtil extends TestUtil
 trait TestUtil {
 
-  def assertEq[A: Equal](actual: A, expect: A): Unit =
+  def assertEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
     assertEqO(None, actual, expect)
 
-  def assertEq[A: Equal](name: => String, actual: A, expect: A): Unit =
+  def assertEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
     assertEqO(Some(name), actual, expect)
 
   private def lead(s: String) = s"$RED_B$s$RESET "
@@ -43,7 +44,7 @@ trait TestUtil {
     name.foreach(n => println(lead(">" * leadSize) + BRIGHT_YELLOW + n + RESET))
   }
 
-  def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A): Unit =
+  def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A)(implicit q: Line): Unit =
     if (actual ≠ expect)
       fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
 
@@ -83,23 +84,27 @@ trait TestUtil {
 
   private def fail2(method: String, name: Option[String])
                    (title1: String, colour1: String, value1: Any)
-                   (title2: String, colour2: String, value2: Any): Unit = {
+                   (title2: String, colour2: String, value2: Any)
+                   (implicit q: Line): Unit = {
     printFail2(name)(title1, colour1, value1)(title2, colour2, value2)
     println()
     fail(s"$method${name.fold("")("(" + _ + ")")} failed.")
   }
 
-  def assertNotEq[A: Equal](actual: A, expect: A): Unit =
+  private def addSrcHint(msg: String)(implicit q: Line): String =
+    s"$msg [L${q.value}]"
+
+  def assertNotEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
     assertNotEqO(None, actual, expect)
 
-  def assertNotEq[A: Equal](name: => String, actual: A, expect: A): Unit =
+  def assertNotEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
     assertNotEqO(Some(name), actual, expect)
 
-  private def assertNotEqO[A: Equal](name: => Option[String], actual: A, expectNot: A): Unit =
+  private def assertNotEqO[A: Equal](name: => Option[String], actual: A, expectNot: A)(implicit q: Line): Unit =
     if (actual === expectNot)
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
-  def assertMultiline(actual: String, expect: String): Unit =
+  def assertMultiline(actual: String, expect: String)(implicit q: Line): Unit =
     if (actual != expect) {
       println()
       val AE = List(actual, expect).map(_.split("\n"))
@@ -124,13 +129,13 @@ trait TestUtil {
       fail("assertMultiline failed.")
     }
 
-  def assertMap[K, V: Equal](actual: Map[K, V], expect: Map[K, V]): Unit =
+  def assertMap[K, V: Equal](actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(None, actual, expect)
 
-  def assertMap[K, V: Equal](name: => String, actual: Map[K, V], expect: Map[K, V]): Unit =
+  def assertMap[K, V: Equal](name: => String, actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(Some(name), actual, expect)
 
-  def assertMapO[K, V: Equal](name: => Option[String], actual: Map[K, V], expect: Map[K, V]): Unit = {
+  def assertMapO[K, V: Equal](name: => Option[String], actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit = {
     assertSet(name.fold("Map keys")(_ + " keys"), actual.keySet, expect.keySet)
     val bad = actual.keysIterator.filter(k => actual(k) ≠ expect(k))
     if (bad.nonEmpty) {
@@ -145,12 +150,12 @@ trait TestUtil {
     }
   }
 
-  def assertSeq[A: Equal](actual: Traversable[A])(expect: A*): Unit = assertSeq(actual, expect.toSeq)
-  def assertSeq[A: Equal](actual: Traversable[A], expect: Traversable[A]): Unit = assertSeqO(None, actual, expect)
-  def assertSeq[A: Equal](name: => String, actual: Traversable[A])(expect: A*): Unit = assertSeq(name, actual, expect.toSeq)
-  def assertSeq[A: Equal](name: => String, actual: Traversable[A], expect: Traversable[A]): Unit = assertSeqO(Some(name), actual, expect)
+  def assertSeq[A: Equal](actual: Traversable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(actual, expect.toSeq)
+  def assertSeq[A: Equal](actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = assertSeqO(None, actual, expect)
+  def assertSeq[A: Equal](name: => String, actual: Traversable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(name, actual, expect.toSeq)
+  def assertSeq[A: Equal](name: => String, actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = assertSeqO(Some(name), actual, expect)
 
-  def assertSeqO[A: Equal](name: => Option[String], actual: Traversable[A], expect: Traversable[A]): Unit = {
+  def assertSeqO[A: Equal](name: => Option[String], actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = {
     var failures = List.empty[Int]
     var lenOk    = true
 
@@ -185,12 +190,12 @@ trait TestUtil {
     }
   }
 
-  def assertSet[A](actual: Set[A])(expect: A*): Unit = assertSet(actual, expect.toSet)
-  def assertSet[A](actual: Set[A], expect: Set[A]): Unit = assertSetO(None, actual, expect)
-  def assertSet[A](name: => String, actual: Set[A])(expect: A*): Unit = assertSet(name, actual, expect.toSet)
-  def assertSet[A](name: => String, actual: Set[A], expect: Set[A]): Unit = assertSetO(Some(name), actual, expect)
+  def assertSet[A](actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(actual, expect.toSet)
+  def assertSet[A](actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(None, actual, expect)
+  def assertSet[A](name: => String, actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(name, actual, expect.toSet)
+  def assertSet[A](name: => String, actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(Some(name), actual, expect)
 
-  def assertSetO[A](name: => Option[String], actual: Set[A], expect: Set[A]): Unit =
+  def assertSetO[A](name: => Option[String], actual: Set[A], expect: Set[A])(implicit q: Line): Unit =
     if (actual != expect) {
       val missing = expect -- actual
       val unexpected = actual -- expect
@@ -212,44 +217,41 @@ trait TestUtil {
       fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
     }
 
-  def fail(msg: String, clearStackTrace: Boolean = true): Nothing =
-    _fail(colourMultiline(msg, BRIGHT_MAGENTA), clearStackTrace)
-
-  def _fail(msg: String, clearStackTrace: Boolean = true): Nothing = {
-    val e = new AssertionError(msg)
+  def fail(msg: String, clearStackTrace: Boolean = true, addSrcHint: Boolean = true)(implicit q: Line): Nothing = {
+    val m = if (addSrcHint) this.addSrcHint(msg) else msg
+    val e = new java.lang.AssertionError(m)
     if (clearStackTrace)
       e.setStackTrace(Array.empty)
     throw e
   }
 
-  private def colourMultiline(text: String, colour: String): String =
-    colour + text.replace("\n", "\n" + colour) + RESET
+  def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertContainsCI", actual.toLowerCase, substr.toLowerCase, true)
 
-  def assertContainsCI(actual: String, expectFrag: String): Unit =
-    assertContains(actual.toLowerCase, expectFrag.toLowerCase)
+  def assertContains(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertContains", actual, substr, true)
 
-  def assertContains(actual: String, expectFrag: String): Unit =
-    if (!actual.contains(expectFrag)) {
-      val a = colourMultiline(actual, BRIGHT_CYAN)
-      _fail(s"${BRIGHT_MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] in:$RESET\n$a")
+  def assertNotContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertNotContainsCI", actual.toLowerCase, substr.toLowerCase, false)
+
+  def assertNotContains(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertNotContains", actual, substr, false)
+
+  private def _assertContains(method: String, actual: String, substr: String, expect: Boolean)(implicit q: Line): Unit =
+    if (actual.contains(substr) != expect) {
+      printFail2(Some(method))(
+        "substr", if (expect) BRIGHT_CYAN else BOLD_BRIGHT_BLUE, substr)(
+        "actual", BOLD_BRIGHT_RED, actual)
+      fail(s"$method failed.")
     }
 
-  def assertNotContainsCI(actual: String, expectFrag: String): Unit =
-    assertNotContains(actual.toLowerCase, expectFrag.toLowerCase)
-
-  def assertNotContains(actual: String, expectFrag: String): Unit =
-    if (actual.contains(expectFrag)) {
-      val a = colourMultiline(actual, BRIGHT_CYAN)
-      _fail(s"${BRIGHT_MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] not in:$RESET\n$a")
-    }
-
-  def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B): R =
+  def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
     assertChangeO(None, query, block)(actual)(expect)
 
-  def assertChange[A, B: Equal, R](desc: => String, query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B): R =
+  def assertChange[A, B: Equal, R](desc: => String, query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
     assertChangeO(Some(desc), query, block)(actual)(expect)
 
-  def assertChangeO[A, B: Equal, R](desc: => Option[String], query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B): R = {
+  def assertChangeO[A, B: Equal, R](desc: => Option[String], query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R = {
     val before = query
     val result = block
     val after  = query
@@ -257,22 +259,22 @@ trait TestUtil {
     result
   }
 
-  def assertNoChange[B: Equal, A](query: => B)(block: => A): A =
+  def assertNoChange[B: Equal, A](query: => B)(block: => A)(implicit q: Line): A =
     assertNoChangeO(None, query)(block)
 
-  def assertNoChange[B: Equal, A](desc: => String, query: => B)(block: => A): A =
+  def assertNoChange[B: Equal, A](desc: => String, query: => B)(block: => A)(implicit q: Line): A =
     assertNoChangeO(Some(desc), query)(block)
 
-  def assertNoChangeO[B: Equal, A](desc: => Option[String], query: => B)(block: => A): A =
+  def assertNoChangeO[B: Equal, A](desc: => Option[String], query: => B)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)((b, _) => b)((b, _) => b)
 
-  def assertDifference[N: Numeric : Equal, A](query: => N)(expect: N)(block: => A): A =
+  def assertDifference[N: Numeric : Equal, A](query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertDifferenceO(None, query)(expect)(block)
 
-  def assertDifference[N: Numeric : Equal, A](desc: => String, query: => N)(expect: N)(block: => A): A =
+  def assertDifference[N: Numeric : Equal, A](desc: => String, query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertDifferenceO(Some(desc), query)(expect)(block)
 
-  def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A): A =
+  def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
   def quoteStringForDisplay(s: String): String = {
