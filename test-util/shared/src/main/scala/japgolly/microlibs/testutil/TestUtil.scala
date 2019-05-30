@@ -4,6 +4,29 @@ import scalaz.Equal
 import scalaz.syntax.equal._
 import scala.io.AnsiColor._
 
+private[testutil] object TestUtilColours {
+  // scala.Console.BOLD exists but not BRIGHT
+  // The difference affects OS X
+  final val BRIGHT_BLACK   = "\u001b[90m"
+  final val BRIGHT_RED     = "\u001b[91m"
+  final val BRIGHT_GREEN   = "\u001b[92m"
+  final val BRIGHT_YELLOW  = "\u001b[93m"
+  final val BRIGHT_BLUE    = "\u001b[94m"
+  final val BRIGHT_MAGENTA = "\u001b[95m"
+  final val BRIGHT_CYAN    = "\u001b[96m"
+  final val BRIGHT_WHITE   = "\u001b[97m"
+
+  final val BOLD_BRIGHT_BLACK   = "\u001b[90;1m"
+  final val BOLD_BRIGHT_RED     = "\u001b[91;1m"
+  final val BOLD_BRIGHT_GREEN   = "\u001b[92;1m"
+  final val BOLD_BRIGHT_YELLOW  = "\u001b[93;1m"
+  final val BOLD_BRIGHT_BLUE    = "\u001b[94;1m"
+  final val BOLD_BRIGHT_MAGENTA = "\u001b[95;1m"
+  final val BOLD_BRIGHT_CYAN    = "\u001b[96;1m"
+  final val BOLD_BRIGHT_WHITE   = "\u001b[97;1m"
+}
+import TestUtilColours._
+
 object TestUtil extends TestUtil
 trait TestUtil {
 
@@ -16,36 +39,55 @@ trait TestUtil {
   private def lead(s: String) = s"$RED_B$s$RESET "
   private def failureStart(name: Option[String], leadSize: Int): Unit = {
     println()
-    name.foreach(n => println(lead(">" * leadSize) + BOLD + YELLOW + n + RESET))
+    name.foreach(n => println(lead(">" * leadSize) + BRIGHT_YELLOW + n + RESET))
   }
 
   def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A): Unit =
-    if (actual ≠ expect) {
-      failureStart(name, 7)
+    if (actual ≠ expect)
+      fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
 
-      val toString: Any => String = {
-        case s: Stream[_] => s.force.toString() // SI-9266
-        case a            => a.toString
-      }
+  private def fail2(method: String, name: Option[String])
+                   (title1: String, colour1: String, value1: Any)
+                   (title2: String, colour2: String, value2: Any): Unit = {
 
-      val as = toString(actual)
-      val es = toString(expect)
-      val ss = as :: es :: Nil
-      var pre = "["
-      var post = "]"
-      val htChars = ss.flatMap(s => s.headOption :: s.lastOption :: Nil)
-      if (htChars.forall(_.exists(c => !Character.isWhitespace(c)))) {
-        pre = ""
-        post = ""
-      }
-      if (ss.exists(_ contains "\n")) {
-        pre = "↙[\n"
-      }
-      println(lead("expect:") + pre + BOLD + GREEN + es + RESET + post)
-      println(lead("actual:") + pre + BOLD + RED + as + RESET + post)
-      println()
-      fail(s"assertEq${name.fold("")("(" + _ + ")")} failed.")
+    val titleLen = title1.length max title2.length
+    val leadFmt = s"%${titleLen}s:"
+
+    failureStart(name, titleLen + 1)
+
+    val toString: Any => String = {
+      case s: Stream[_] => s.force.toString() // SI-9266
+      case a            => a.toString
     }
+
+    val show1 = toString(value1)
+    val show2 = toString(value2)
+    val ss = show2 :: show1 :: Nil
+    var pre = "["
+    var post = "]"
+    val htChars = ss.flatMap(s => s.headOption :: s.lastOption :: Nil)
+    if (htChars.forall(_.exists(c => !Character.isWhitespace(c)))) {
+      pre = ""
+      post = ""
+    }
+    if (ss.exists(_ contains "\n")) {
+      pre = "↙[\n"
+    }
+    println(lead(leadFmt.format(title1)) + pre + colour1 + show1 + RESET + post)
+    println(lead(leadFmt.format(title2)) + pre + colour2 + show2 + RESET + post)
+    println()
+    fail(s"$method${name.fold("")("(" + _ + ")")} failed.")
+  }
+
+  def assertNotEq[A: Equal](actual: A, expect: A): Unit =
+    assertNotEqO(None, actual, expect)
+
+  def assertNotEq[A: Equal](name: => String, actual: A, expect: A): Unit =
+    assertNotEqO(Some(name), actual, expect)
+
+  private def assertNotEqO[A: Equal](name: => Option[String], actual: A, expectNot: A): Unit =
+    if (actual === expectNot)
+      fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertMultiline(actual: String, expect: String): Unit =
     if (actual != expect) {
@@ -55,15 +97,18 @@ trait TestUtil {
       val lim = as.length max es.length
       val List(maxA,_) = AE.map(x => (0 #:: x.map(_.length).toStream).max)
       val maxL = lim.toString.length
-      println("A|E")
-      val fmt = s"%s%${maxL}d: %-${maxA}s |%s| %s$RESET\n"
+      println(s"${BRIGHT_YELLOW}assertMultiline:$RESET actual | expect")
+      val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxA}s | | %s${RESET}\n"
+      val fmtWS = s"${WHITE}%${maxL}d: ${RED_B}${BLACK}%-${maxA}s${RESET}${WHITE} |≈| ${GREEN_B}${BLACK}%s${RESET}\n"
+      val fmtKO = s"${WHITE}%${maxL}d: ${BOLD_BRIGHT_RED}%-${maxA}s${RESET}${WHITE} |≠| ${BOLD_BRIGHT_GREEN}%s${RESET}\n"
       def removeWhitespace(s: String) = s.filterNot(_.isWhitespace)
       for (i <- 0 until lim) {
         val List(a, e) = AE.map(s => if (i >= s.length) "" else s(i))
-        val ok = a == e
-        val cmp = if (ok) " " else if (removeWhitespace(a) == removeWhitespace(e)) "≈" else "≠"
-        val col = if (ok) BOLD + BLACK else WHITE
-        printf(fmt, col, i + 1, a, cmp, e)
+        val fmt =
+          if (a == e) fmtOK
+          else if (removeWhitespace(a) == removeWhitespace(e)) fmtWS
+          else fmtKO
+        printf(fmt, i + 1, a, e)
       }
       println()
       fail("assertMultiline failed.")
@@ -82,8 +127,8 @@ trait TestUtil {
       val x = bad.toVector
       for (k <- x) {
         println(s"MapKey: $k")
-        println(s"Expect: $BOLD$GREEN${expect(k)}$RESET")
-        println(s"Actual: $BOLD$RED${actual(k)}$RESET")
+        println(s"Expect: $BOLD_BRIGHT_GREEN${expect(k)}$RESET")
+        println(s"Actual: $BOLD_BRIGHT_RED${actual(k)}$RESET")
         println()
       }
       fail(s"assertMap${name.fold("")("(" + _ + ")")} failed with ${x.length} value discrepancies.")
@@ -111,14 +156,14 @@ trait TestUtil {
         }
 
       failureStart(name, leadSize)
-      show(" missing:", BOLD + CYAN, missing)
-      show("unwanted:", BOLD + RED, unexpected)
+      show(" missing:", BRIGHT_CYAN, missing)
+      show("unwanted:", BOLD_BRIGHT_RED, unexpected)
       println()
       fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
     }
 
   def fail(msg: String, clearStackTrace: Boolean = true): Nothing =
-    _fail(colourMultiline(msg, BOLD + MAGENTA), clearStackTrace)
+    _fail(colourMultiline(msg, BRIGHT_MAGENTA), clearStackTrace)
 
   def _fail(msg: String, clearStackTrace: Boolean = true): Nothing = {
     val e = new AssertionError(msg)
@@ -135,8 +180,8 @@ trait TestUtil {
 
   def assertContains(actual: String, expectFrag: String): Unit =
     if (!actual.contains(expectFrag)) {
-      val a = colourMultiline(actual, BOLD + CYAN)
-      _fail(s"${BOLD}${MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] in:$RESET\n$a")
+      val a = colourMultiline(actual, BRIGHT_CYAN)
+      _fail(s"${BRIGHT_MAGENTA}Expected [${GREEN}$expectFrag${MAGENTA}] in:$RESET\n$a")
     }
 
   def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B): R =
