@@ -1,5 +1,6 @@
 package japgolly.microlibs.testutil
 
+import scala.annotation.tailrec
 import scalaz.Equal
 import scalaz.syntax.equal._
 import scala.io.AnsiColor._
@@ -46,9 +47,12 @@ trait TestUtil {
     if (actual ≠ expect)
       fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
 
-  private def fail2(method: String, name: Option[String])
-                   (title1: String, colour1: String, value1: Any)
-                   (title2: String, colour2: String, value2: Any): Unit = {
+  private def printFailEA(name: Option[String], actual: Any, expect: Any): Unit =
+    printFail2(name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
+
+  private def printFail2(name: Option[String])
+                        (title1: String, colour1: String, value1: Any)
+                        (title2: String, colour2: String, value2: Any): Unit = {
 
     val titleLen = title1.length max title2.length
     val leadFmt = s"%${titleLen}s:"
@@ -75,6 +79,12 @@ trait TestUtil {
     }
     println(lead(leadFmt.format(title1)) + pre + colour1 + show1 + RESET + post)
     println(lead(leadFmt.format(title2)) + pre + colour2 + show2 + RESET + post)
+  }
+
+  private def fail2(method: String, name: Option[String])
+                   (title1: String, colour1: String, value1: Any)
+                   (title2: String, colour2: String, value2: Any): Unit = {
+    printFail2(name)(title1, colour1, value1)(title2, colour2, value2)
     println()
     fail(s"$method${name.fold("")("(" + _ + ")")} failed.")
   }
@@ -132,6 +142,45 @@ trait TestUtil {
         println()
       }
       fail(s"assertMap${name.fold("")("(" + _ + ")")} failed with ${x.length} value discrepancies.")
+    }
+  }
+
+  def assertSeq[A: Equal](actual: Traversable[A])(expect: A*): Unit = assertSeq(actual, expect.toSeq)
+  def assertSeq[A: Equal](actual: Traversable[A], expect: Traversable[A]): Unit = assertSeqO(None, actual, expect)
+  def assertSeq[A: Equal](name: => String, actual: Traversable[A])(expect: A*): Unit = assertSeq(name, actual, expect.toSeq)
+  def assertSeq[A: Equal](name: => String, actual: Traversable[A], expect: Traversable[A]): Unit = assertSeqO(Some(name), actual, expect)
+
+  def assertSeqO[A: Equal](name: => Option[String], actual: Traversable[A], expect: Traversable[A]): Unit = {
+    var failures = List.empty[Int]
+    var lenOk    = true
+
+    val ia = actual.toIterator
+    val ie = expect.toIterator
+    @tailrec def go(i: Int): Unit =
+      if (ia.hasNext) {
+        val a = ia.next()
+        if (ie.hasNext) {
+          val e = ie.next()
+          if (a ≠ e)
+            failures ::= i
+          go(i + 1)
+        } else
+          lenOk = false
+      } else
+        lenOk = ie.isEmpty
+    go(0)
+
+    val pass = lenOk && failures.isEmpty
+    if (!pass) {
+      val av = actual.toVector
+      val ev = expect.toVector
+      val n = name.fold("")(_ + ": ")
+      if (!lenOk) printFailEA(Some(n + "size"), actual = av.length, expect = ev.length)
+      for (i <- failures.reverse) {
+        val a = av(i)
+        val e = ev(i)
+        printFailEA(Some(s"${n}element ($i)"), actual = a, expect = e)
+      }
     }
   }
 
