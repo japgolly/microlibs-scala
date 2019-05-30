@@ -181,6 +181,7 @@ trait TestUtil {
         val e = ev(i)
         printFailEA(Some(s"${n}element ($i)"), actual = a, expect = e)
       }
+      fail(s"assertSeq${name.fold("")("(" + _ + ")")} failed.")
     }
   }
 
