@@ -42,14 +42,13 @@ class ScalazMacros(val c: blackbox.Context) extends MacroUtils {
 
     def adt: Tree = {
       val init = new Init("i$" + _)
-      val cases = crawlADT[CaseDef](T, p => {
-        val pt = determineAdtType(T, p)
-        tryInferImplicit(appliedType(equal, pt)).map { et =>
+      val cases = crawlADT[CaseDef](T, (_, pt) => {
+        val equalP = appliedType(equal, pt)
+        tryInferImplicit(equalP).map { et =>
           val e = init.valDef(et)
           cq"x: $pt => b match {case y: $pt => $e.equal(x,y); case _ => false}"
         }
-      }, p => {
-        val pt = p.asType.toType
+      }, (_, pt) => {
         val u = appliedType(equal, pt)
         fail(s"Implicit not found: $u")
       })

@@ -112,8 +112,8 @@ abstract class MacroUtils {
   }
 
   final def crawlADT[A](tpe    : Type,
-                        attempt: ClassSymbol => Option[A],
-                        giveUp : ClassSymbol => TraversableOnce[A]): Vector[A] = {
+                        attempt: (ClassSymbol, Type) => Option[A],
+                        giveUp : (ClassSymbol, Type) => TraversableOnce[A]): Vector[A] = {
     var seen = Set.empty[Type]
     val results = Vector.newBuilder[A]
 
@@ -139,9 +139,11 @@ abstract class MacroUtils {
       // abstract first because their children may also be considered knownDirectSubclasses
       for (sub <- subclasses) {
         val subClass = sub.asClass
-        val subType = sub.asType.toType
+        val subType = propagateTypeParams(tpe, subClass)
+//        println(s"[C1] subClass = $subClass")
+//        println(s"[C1] subType  = $subType")
         if (firstPass(subClass) && !seen.contains(subType)) {
-          attempt(subClass) match {
+          attempt(subClass, subType) match {
             case Some(a) => markAsSeen(subType); results += a
             case None    => go(subType)
           }
@@ -151,12 +153,14 @@ abstract class MacroUtils {
       // second pass: concrete leaves
       for (sub <- subclasses) {
         val subClass = sub.asClass
-        val subType = sub.asType.toType
+        val subType = propagateTypeParams(tpe, subClass)
+//        println(s"[C2] subClass = $subClass")
+//        println(s"[C2] subType  = $subType")
         if (!firstPass(subClass) && !seen.contains(subType)) {
           markAsSeen(subType)
-          attempt(subClass) match {
+          attempt(subClass, subType) match {
             case Some(a) => results += a
-            case None    => results ++= giveUp(subClass)
+            case None    => results ++= giveUp(subClass, subType)
           }
         }
       }
@@ -213,17 +217,18 @@ abstract class MacroUtils {
   /**
    * findConcreteTypes will spit out type constructors. This will turn them into types.
    *
-   * @param T The ADT base trait.
+   * @param root The ADT base trait.
    * @param t The subclass.
    */
-  final def determineAdtType(T: Type, t: ClassSymbol): Type = {
-    val t2 =  propagateTypeParams(T, t)
-    require(t2 <:< T, s"$t2 is not a subtype of $T")
-    t2
+  def determineAdtType(root: Type, t: ClassSymbol): Type = {
+    val result = propagateTypeParams(root, t)
+    require(result <:< root, s"$result is not a subtype of $root")
+    result
   }
 
   /** propagateTypeParams(Either[Int, Long], Right) -> Right[Long] */
-  def propagateTypeParams(root: Type, child: ClassSymbol): Type = {
+  def propagateTypeParams(root0: Type, child: ClassSymbol): Type = {
+    val root = root0.dealias
     // Thank you Jon Pretty!
     // https://github.com/propensive/magnolia/blob/6d05a4b61b19b003d68505e2384d964ae3397e69/core/shared/src/main/scala/magnolia.scala#L411-L420
     val subType     = child.asType.toType // FIXME: Broken for path dependent types
