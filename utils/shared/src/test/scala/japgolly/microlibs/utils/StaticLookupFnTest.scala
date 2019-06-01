@@ -21,7 +21,7 @@ object StaticLookupFnTest extends TestSuite {
     ()
   }
 
-  private def assertDup[@specialized(Int) K, V](dsl: StaticLookupFn.ArrayDsl[K, V]): Unit = {
+  private def assertDup[@specialized(Int) K, V](dsl: StaticLookupFn.DslBase[K, V]): Unit = {
     intercept[ExceptionInInitializerError]({dsl.total; ()})
     intercept[ExceptionInInitializerError]({dsl.toOption; ()})
     intercept[ExceptionInInitializerError]({dsl.toEither(_ => ()); ()})

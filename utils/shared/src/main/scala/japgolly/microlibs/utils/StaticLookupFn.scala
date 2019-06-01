@@ -10,22 +10,24 @@ import scala.reflect.ClassTag
   */
 object StaticLookupFn {
 
-  def useArray[A >: Null : ClassTag](as: Traversable[(Int, A)]): ArrayDsl[Int, A] =
+  def useArray[A >: Null : ClassTag](as: Traversable[(Int, A)]): ArrayDsl[A] =
     if (as.isEmpty)
-      Dsl.empty
+      new ArrayDsl[A] with Dsl.EmptyBase[Int, A] {
+        override def to[V >: Null : ClassTag](ok: A => V, ko: Int => V) = ko
+      }
     else
-      new ArrayDsl[Int, A] {
+      new ArrayDsl[A] {
         override def total =
-          to(identity, keyFail)(identity)
+          to(identity, keyFail)
 
         override def toOption =
-          to(Some(_), _ => None)(_.get)
+          to(Some(_), _ => None)
 
         override def toEither[E](e: Int => E) =
-          to(Right(_), i => Left(e(i)))(_.right.get)
+          to(Right(_), i => Left(e(i)))
 
-        private def to[V >: Null : ClassTag](ok: A => V, ko: Int => V)(un: V => A): Int => V = {
-          val array = mkArray(ok)(un)
+        override def to[V >: Null : ClassTag](ok: A => V, ko: Int => V): Int => V = {
+          val array = mkArray(ok)
           i => if (i >= 0 && i < array.length) {
             val a = array(i)
             if (null != a) a else ko(i)
@@ -33,26 +35,30 @@ object StaticLookupFn {
             ko(i)
         }
 
-        private def mkArray[X >: Null : ClassTag](toX: A => X)(fromX: X => A): Array[X] = {
+        private def mkArray[X >: Null : ClassTag](toX: A => X): Array[X] = {
           val len = as.toIterator.map(_._1).max + 1
-          val array = Array.fill[X](len)(null)
+          val aa = Array.fill[A](len)(null)
+          val ax = Array.fill[X](len)(null)
           for ((i, a) <- as) {
             assert(i >= 0, s"Indices can't be negative. Found: $i")
-            val x2 = array(i)
-            if (null != x2) {
-              val a2 = fromX(x2)
+            val a2 = aa(i)
+            if (null != a2)
               fail(s"Duplicates for index $i: $a and $a2")
-            }
-            array(i) = toX(a)
+            aa(i) = a
+            ax(i) = toX(a)
           }
-          array
+          ax
         }
 
         override protected def iterator() = as.toIterator
       }
 
-  def useArrayBy[A >: Null : ClassTag](as: Traversable[A])(key: A => Int): ArrayDsl[Int, A] =
+  def useArrayBy[A >: Null : ClassTag](as: Traversable[A])(key: A => Int): DslBase[Int, A] =
     useArray(as.map(a => (key(a), a)))
+
+  trait ArrayDsl[A] extends DslBase[Int, A] {
+    def to[V >: Null : ClassTag](ok: A => V, ko: Int => V): Int => V
+  }
 
   // ===================================================================================================================
 
@@ -92,7 +98,7 @@ object StaticLookupFn {
 
   // ===================================================================================================================
 
-  trait ArrayDsl[@specialized(Int) K, V] {
+  trait DslBase[@specialized(Int) K, V] {
     def total: K => V
     def toOption: K => Option[V]
     def toEither[E](e: K => E): K => Either[E, V]
@@ -105,7 +111,7 @@ object StaticLookupFn {
     protected def iterator(): Iterator[(K, V)]
   }
 
-  trait Dsl[@specialized(Int) K, V] extends ArrayDsl[K, V] {
+  trait Dsl[@specialized(Int) K, V] extends DslBase[K, V] {
     override def total: K => V =
       to(identity, keyFail)
 
@@ -120,11 +126,14 @@ object StaticLookupFn {
 
   object Dsl {
     def empty[@specialized(Int) K, V]: Dsl[K, V] =
-    new Dsl[K, V] {
+      new Dsl[K, V] with EmptyBase[K, V] {
+        override def to[A](ok: V => A, ko: K => A) = ko
+      }
+
+    trait EmptyBase[@specialized(Int) K, V] extends DslBase[K, V] {
       override def total = keyFail
       override def toOption = _ => None
       override def toEither[E](e: K => E) = k => Left(e(k))
-      override def to[A](ok: V => A, ko: K => A) = ko
       override protected def iterator() = Iterator.empty
     }
   }
