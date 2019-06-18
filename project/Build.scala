@@ -57,6 +57,7 @@ object Microlibs {
       crossScalaVersions            := Seq(Ver.Scala211, Ver.Scala212),
       scalacOptions                ++= scalacFlags.value,
       scalacOptions in Test        --= Seq("-Ywarn-dead-code"),
+      testFrameworks                := Nil,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       triggeredMessage              := Watched.clearWhenTriggered,
       updateOptions                 := updateOptions.value.withCachedResolution(true),
