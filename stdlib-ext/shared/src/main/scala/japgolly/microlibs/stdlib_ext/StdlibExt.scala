@@ -310,7 +310,9 @@ object StdlibExt {
       asSeconds / 60.0
 
     def conciseDesc: String =
-      if (d.getSeconds == 0) {
+      if (d.isNegative)
+        "-" + d.abs.conciseDesc
+      else if (d.getSeconds == 0) {
         val n = d.getNano
         if      (n >= 1000000) (n/1000000) + " ms"
         else if (n >= 1000)    (n/1000)    + " us"

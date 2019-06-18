@@ -50,15 +50,23 @@ object StdlibExtTest extends TestSuite {
 
     'duration {
       'toSeconds {
-        val d = Duration.ofMillis(1100) plus Duration.ofNanos(9002003L)
-        d.asSeconds ==> 1.109002003
+        'pos {
+          val d = Duration.ofMillis(1100) plus Duration.ofNanos(9002003L)
+          d.asSeconds ==> 1.109002003
+        }
+        'neg {
+          val d = Duration.ofMillis(-1100) minus Duration.ofNanos(9002003L)
+          d.asSeconds ==> -1.109002003
+        }
       }
 
       'conciseDesc {
         def test(sec: Double, ns: Long, expect: String): Unit = {
-          val d = Duration.ofSeconds(sec.toLong).plus(Duration.ofNanos(ns))
-          val a = d.conciseDesc
-          a ==> expect
+          val pos = Duration.ofSeconds(sec.toLong).plus(Duration.ofNanos(ns))
+          pos.conciseDesc ==> expect
+
+          val neg = pos.negated()
+          neg.conciseDesc ==> s"-$expect"
         }
 
         'ns1 - test(0,   1,   "1 ns")
