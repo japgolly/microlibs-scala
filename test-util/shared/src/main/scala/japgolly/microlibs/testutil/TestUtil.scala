@@ -306,4 +306,21 @@ trait TestUtil {
     sb.toString()
   }
 
+  def onFail[A](body: => A)(onFail: => Any): A =
+    try
+      body
+    catch {
+      case t: java.lang.AssertionError =>
+        onFail
+        throw t
+    }
+
+  def onError[A](body: => A)(onError: Throwable => Any): A =
+    try
+      body
+    catch {
+      case t: Throwable =>
+        onError(t)
+        throw t
+    }
 }
