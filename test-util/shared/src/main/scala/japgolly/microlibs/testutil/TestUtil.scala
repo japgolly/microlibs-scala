@@ -30,6 +30,15 @@ trait TestUtil {
     throw e
   }
 
+  def failMethod(method: String)(implicit q: Line): Nothing =
+    failMethod(method, None)
+
+  def failMethod(method: String, desc: String)(implicit q: Line): Nothing =
+    failMethod(method, Some(desc))
+
+  def failMethod(method: String, desc: Option[String])(implicit q: Line): Nothing =
+    fail(s"$method${desc.fold("")("(" + _ + ")")} failed.")
+
   def onFail[A](body: => A)(onFail: => Any): A =
     try
       body
@@ -51,10 +60,10 @@ trait TestUtil {
   private def fail2(method: String, name: Option[String])
                    (title1: String, colour1: String, value1: Any)
                    (title2: String, colour2: String, value2: Any)
-                   (implicit q: Line): Unit = {
+                   (implicit q: Line): Nothing = {
     printFail2(name)(title1, colour1, value1)(title2, colour2, value2)
     println()
-    fail(s"$method${name.fold("")("(" + _ + ")")} failed.")
+    failMethod(method, name)
   }
 
   def assertEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
