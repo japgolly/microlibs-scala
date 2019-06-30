@@ -19,7 +19,7 @@ object Microlibs {
   object Ver {
     val JAMM            = "0.3.3"
     val JavaTimeScalaJs = "0.2.5"
-    val KindProjector   = "0.9.10"
+    val KindProjector   = "0.10.3"
     val MacroParadise   = "2.1.1"
     val Monocle         = "1.5.0"
     val MTest           = "0.6.7"
@@ -62,7 +62,7 @@ object Microlibs {
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
       releaseVcsSign                := true,
-      addCompilerPlugin("org.spire-math" %% "kind-projector" % Ver.KindProjector)))
+      addCompilerPlugin("org.typelevel" %% "kind-projector" % Ver.KindProjector)))
 
   def definesMacros = ConfigureBoth(
     _.settings(
