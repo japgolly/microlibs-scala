@@ -5,82 +5,36 @@ import scalaz.Equal
 import scalaz.syntax.equal._
 import scala.io.AnsiColor._
 import sourcecode.Line
-
-private[testutil] object TestUtilColours {
-  // scala.Console.BOLD exists but not BRIGHT
-  // The difference affects OS X
-  final val BRIGHT_BLACK   = "\u001b[90m"
-  final val BRIGHT_RED     = "\u001b[91m"
-  final val BRIGHT_GREEN   = "\u001b[92m"
-  final val BRIGHT_YELLOW  = "\u001b[93m"
-  final val BRIGHT_BLUE    = "\u001b[94m"
-  final val BRIGHT_MAGENTA = "\u001b[95m"
-  final val BRIGHT_CYAN    = "\u001b[96m"
-  final val BRIGHT_WHITE   = "\u001b[97m"
-
-  final val BOLD_BRIGHT_BLACK   = "\u001b[90;1m"
-  final val BOLD_BRIGHT_RED     = "\u001b[91;1m"
-  final val BOLD_BRIGHT_GREEN   = "\u001b[92;1m"
-  final val BOLD_BRIGHT_YELLOW  = "\u001b[93;1m"
-  final val BOLD_BRIGHT_BLUE    = "\u001b[94;1m"
-  final val BOLD_BRIGHT_MAGENTA = "\u001b[95;1m"
-  final val BOLD_BRIGHT_CYAN    = "\u001b[96;1m"
-  final val BOLD_BRIGHT_WHITE   = "\u001b[97;1m"
-}
-import TestUtilColours._
+import TestUtilInternals._
 
 object TestUtil extends TestUtil
 trait TestUtil {
 
-  def assertEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
-    assertEqO(None, actual, expect)
-
-  def assertEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
-    assertEqO(Some(name), actual, expect)
-
-  private def lead(s: String) = s"$RED_B$s$RESET "
-  private def failureStart(name: Option[String], leadSize: Int): Unit = {
-    println()
-    name.foreach(n => println(lead(">" * leadSize) + BRIGHT_YELLOW + n + RESET))
+  def fail(msg: String, clearStackTrace: Boolean = true, addSrcHint: Boolean = true)(implicit q: Line): Nothing = {
+    val m = if (addSrcHint) TestUtilInternals.addSrcHint(msg) else msg
+    val e = new java.lang.AssertionError(m)
+    if (clearStackTrace)
+      e.setStackTrace(Array.empty)
+    throw e
   }
 
-  def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A)(implicit q: Line): Unit =
-    if (actual ≠ expect)
-      fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
-
-  private def printFailEA(name: Option[String], actual: Any, expect: Any): Unit =
-    printFail2(name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
-
-  private def printFail2(name: Option[String])
-                        (title1: String, colour1: String, value1: Any)
-                        (title2: String, colour2: String, value2: Any): Unit = {
-
-    val titleLen = title1.length max title2.length
-    val leadFmt = s"%${titleLen}s:"
-
-    failureStart(name, titleLen + 1)
-
-    val toString: Any => String = {
-      case s: Stream[_] => s.force.toString() // SI-9266
-      case a            => a.toString
+  def onFail[A](body: => A)(onFail: => Any): A =
+    try
+      body
+    catch {
+      case t: java.lang.AssertionError =>
+        onFail
+        throw t
     }
 
-    val show1 = toString(value1)
-    val show2 = toString(value2)
-    val ss = show2 :: show1 :: Nil
-    var pre = "["
-    var post = "]"
-    val htChars = ss.flatMap(s => s.headOption :: s.lastOption :: Nil)
-    if (htChars.forall(_.exists(c => !Character.isWhitespace(c)))) {
-      pre = ""
-      post = ""
+  def onError[A](body: => A)(onError: Throwable => Any): A =
+    try
+      body
+    catch {
+      case t: Throwable =>
+        onError(t)
+        throw t
     }
-    if (ss.exists(_ contains "\n")) {
-      pre = "↙[\n"
-    }
-    println(lead(leadFmt.format(title1)) + pre + colour1 + show1 + RESET + post)
-    println(lead(leadFmt.format(title2)) + pre + colour2 + show2 + RESET + post)
-  }
 
   private def fail2(method: String, name: Option[String])
                    (title1: String, colour1: String, value1: Any)
@@ -91,8 +45,15 @@ trait TestUtil {
     fail(s"$method${name.fold("")("(" + _ + ")")} failed.")
   }
 
-  private def addSrcHint(msg: String)(implicit q: Line): String =
-    s"$msg [L${q.value}]"
+  def assertEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
+    assertEqO(None, actual, expect)
+
+  def assertEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
+    assertEqO(Some(name), actual, expect)
+
+  def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A)(implicit q: Line): Unit =
+    if (actual ≠ expect)
+      fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertNotEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
     assertNotEqO(None, actual, expect)
@@ -217,14 +178,6 @@ trait TestUtil {
       fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
     }
 
-  def fail(msg: String, clearStackTrace: Boolean = true, addSrcHint: Boolean = true)(implicit q: Line): Nothing = {
-    val m = if (addSrcHint) this.addSrcHint(msg) else msg
-    val e = new java.lang.AssertionError(m)
-    if (clearStackTrace)
-      e.setStackTrace(Array.empty)
-    throw e
-  }
-
   def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
     _assertContains("assertContainsCI", actual.toLowerCase, substr.toLowerCase, true)
 
@@ -277,50 +230,4 @@ trait TestUtil {
   def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
-  def quoteStringForDisplay(s: String): String = {
-    val sb = new StringBuilder
-    sb append '⟪'
-    s foreach {
-      case '\b' => sb append '\\'; sb append 'b'
-      case '\f' => sb append '\\'; sb append 'f'
-      case '\n' => sb append '\\'; sb append 'n'
-      case '\r' => sb append '\\'; sb append 'r'
-      case '\t' => sb append '\\'; sb append 't'
-      case '\\' => sb append '\\'; sb append '\\'
-      case c    =>
-        if (c >= ' ' && c <= '~')
-          sb append c
-        else {
-          val hex = Integer.toHexString(c.toInt)
-          sb append "\\u"
-          hex.length match {
-            case 1 => sb append "000"
-            case 2 => sb append "00"
-            case 3 => sb append '0'
-            case _ =>
-          }
-          sb append hex
-        }
-    }
-    sb append '⟫'
-    sb.toString()
-  }
-
-  def onFail[A](body: => A)(onFail: => Any): A =
-    try
-      body
-    catch {
-      case t: java.lang.AssertionError =>
-        onFail
-        throw t
-    }
-
-  def onError[A](body: => A)(onError: Throwable => Any): A =
-    try
-      body
-    catch {
-      case t: Throwable =>
-        onError(t)
-        throw t
-    }
 }
