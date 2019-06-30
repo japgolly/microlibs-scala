@@ -1,6 +1,7 @@
 package japgolly.microlibs.testutil
 
 import japgolly.univeq.UnivEq
+import japgolly.univeq.UnivEqScalaz.scalazEqualFromUnivEq
 import java.io.ByteArrayOutputStream
 import scala.annotation.tailrec
 import scalaz.Equal
@@ -219,7 +220,12 @@ trait TestUtilWithoutUnivEq {
   def assertSeqIgnoreOrder[A: Equal](name: => String, actual: TraversableOnce[A], expect: TraversableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
 
   def assertSeqIgnoreOrderO[A](name: => Option[String], actual: TraversableOnce[A], expect: TraversableOnce[A])
-                              (implicit q: Line, A: Equal[A]): Unit = {
+                              (implicit q: Line, A: Equal[A]): Unit =
+    _assertSeqIgnoreOrderO("assertSeqIgnoreOrder")(name, actual, expect)
+
+  private def _assertSeqIgnoreOrderO[A](methodName: String)
+                                       (name: => Option[String], actual: TraversableOnce[A], expect: TraversableOnce[A])
+                                       (implicit q: Line, A: Equal[A]): Unit = {
     val as = actual.toArray[Any]
     val es = expect.toArray[Any]
     var matches = 0
@@ -278,7 +284,7 @@ trait TestUtilWithoutUnivEq {
         showElements(es, eTitle, BOLD_BRIGHT_GREEN, "-")
         showElements(as, aTitle, BOLD_BRIGHT_RED, "+")
         println()
-        failMethod("assertSeqIgnoreOrder", n)
+        failMethod(methodName, n)
       }
     }
   }
@@ -289,28 +295,8 @@ trait TestUtilWithoutUnivEq {
   def assertSet[A: UnivEq](name: => String, actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(Some(name), actual, expect)
 
   def assertSetO[A: UnivEq](name: => Option[String], actual: Set[A], expect: Set[A])(implicit q: Line): Unit =
-    if (actual != expect) {
-      val missing = expect -- actual
-      val unexpected = actual -- expect
-
-      val leadSize = 9
-      //if (missing.nonEmpty || unexpected.nonEmpty)
-      //fail(s"Actual: $actual\nExpect: $expect\n   Missing: $missing\nUnexpected: $unexpected")
-      def show(title: String, col: String, s: Set[A]): Unit =
-        if (s.nonEmpty) {
-          //val x = if (s.size == 1) s.head.toString else s.mkString("{ ",", "," }")
-          val x = s.iterator.map(_.toString).toVector.sorted.mkString("\n" + (" " * (leadSize + 1)))
-          println(lead(title) + col + x + RESET)
-        }
-
-      withAtomicOutput {
-        failureStart(name, leadSize)
-        show(" missing:", BRIGHT_CYAN, missing)
-        show("unwanted:", BOLD_BRIGHT_RED, unexpected)
-        println()
-        fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
-      }
-    }
+    if (actual != expect)
+      _assertSeqIgnoreOrderO("assertSet")(name, actual, expect)
 
   def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
     _assertContains("assertContainsCI", actual.toLowerCase, substr.toLowerCase, true)
