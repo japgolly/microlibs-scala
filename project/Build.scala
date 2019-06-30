@@ -34,18 +34,17 @@ object Microlibs {
     Seq(
       "-deprecation",
       "-unchecked",
-      "-Ywarn-dead-code",
-      "-Ywarn-unused",
-      "-Ywarn-value-discard",
       "-feature",
       "-language:postfixOps",
       "-language:implicitConversions",
       "-language:higherKinds",
-      "-language:existentials")
-    ++ (scalaVersion.value match {
-      case x if x startsWith "2.11." => "-target:jvm-1.6" :: Nil
-      case x if x startsWith "2.12." => "-target:jvm-1.8" :: "-opt:l:method" :: Nil
-    }))
+      "-language:existentials",
+      "-opt:l:inline",
+      "-opt-inline-from:scala.**",
+      "-opt-inline-from:japgolly.microlibs.**",
+      "-Ywarn-dead-code",
+      "-Ywarn-unused",
+      "-Ywarn-value-discard"))
 
   val commonSettings = ConfigureBoth(
     _.settings(
