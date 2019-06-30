@@ -9,8 +9,7 @@ import scala.io.AnsiColor._
 import sourcecode.Line
 import TestUtilInternals._
 
-object TestUtil extends TestUtil
-trait TestUtil {
+trait TestUtilWithoutUnivEq {
 
   def withAtomicOutput[A](a: => A): A = {
     val os = new ByteArrayOutputStream()
@@ -327,3 +326,10 @@ trait TestUtil {
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
 }
+
+trait TestUtil
+  extends TestUtilWithoutUnivEq
+     with japgolly.univeq.UnivEqExports
+     with japgolly.univeq.UnivEqScalaz
+
+object TestUtil extends TestUtil
