@@ -25,6 +25,9 @@ object TestUtilInternals {
   final val BOLD_BRIGHT_CYAN    = "\u001b[96;1m"
   final val BOLD_BRIGHT_WHITE   = "\u001b[97;1m"
 
+  object Poison
+  type Poison = Poison.type
+
   private[testutil] val printMutex = new AnyRef
 
   def lead(s: String) = s"$RED_B$s$RESET "

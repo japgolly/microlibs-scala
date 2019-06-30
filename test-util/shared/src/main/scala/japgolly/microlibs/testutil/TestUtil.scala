@@ -174,6 +174,76 @@ trait TestUtil {
     }
   }
 
+  def assertSeqIgnoreOrder[A: Equal](actual: TraversableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Equal](actual: TraversableOnce[A], expect: TraversableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(None, actual, expect)
+  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: TraversableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(name, actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: TraversableOnce[A], expect: TraversableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
+
+  def assertSeqIgnoreOrderO[A](name: => Option[String], actual: TraversableOnce[A], expect: TraversableOnce[A])
+                              (implicit q: Line, A: Equal[A]): Unit = {
+    val as = actual.toArray[Any]
+    val es = expect.toArray[Any]
+    var matches = 0
+
+    for (ia <- as.indices) {
+      val a = as(ia).asInstanceOf[A]
+      @tailrec def go(ie: Int): Unit =
+        if (ie >= 0) {
+          val e = es(ie)
+          val ok = !e.isInstanceOf[Poison] && A.equal(a, e.asInstanceOf[A])
+          if (ok) {
+            matches += 1
+            as(ia) = Poison
+            es(ie) = Poison
+          } else
+            go(ie - 1)
+        }
+      go(es.length - 1)
+    }
+
+    val sizeMatch = as.length == es.length
+    val pass      = sizeMatch && matches == es.length
+    if (!pass) {
+      val n = name
+      // def prefix = n.fold("")(_ + ": ")
+      def eTitle = "Expect elements:"
+      def aTitle = "Actual elements:"
+      // def eSizeT = "Expect seq size:"
+      // def aSizeT = "Actual seq size:"
+
+      withAtomicOutput {
+        // if (sizeMatch)
+        //   failureStart(n, aTitle.length)
+        // else
+        //   printFailEA(Some(prefix + "Element count"), actual = as.length, expect = es.length)
+        failureStart(n, aTitle.length)
+        // if (!sizeMatch) {
+        //   println(s"${lead(eSizeT)}${BOLD_BRIGHT_GREEN}${es.length}$RESET")
+        //   println(s"${lead(aSizeT)}${BOLD_BRIGHT_RED}${as.length}$RESET")
+        // }
+
+        def showElements(xs: Array[Any], title: String, colour: String, sizePrefix: String): Unit = {
+          val b = Array.newBuilder[String]
+          for (x <- xs)
+            if (!x.isInstanceOf[Poison])
+              b += "" + x
+          val ss = b.result()
+          if (ss.nonEmpty) {
+            java.util.Arrays.sort(ss, Ordering[String])
+            println(lead(title) + colour + sizePrefix + ss.length + " elements" + RESET)
+            for (s <- ss)
+              println(s"- $colour$s$RESET")
+          }
+        }
+
+        showElements(es, eTitle, BOLD_BRIGHT_GREEN, "-")
+        showElements(as, aTitle, BOLD_BRIGHT_RED, "+")
+        println()
+        failMethod("assertSeqIgnoreOrder", n)
+      }
+    }
+  }
+
   def assertSet[A](actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(actual, expect.toSet)
   def assertSet[A](actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(None, actual, expect)
   def assertSet[A](name: => String, actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(name, actual, expect.toSet)
