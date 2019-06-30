@@ -24,7 +24,6 @@ object Microlibs {
     val Monocle         = "1.5.0"
     val MTest           = "0.6.7"
     val Nyaya           = "0.8.1"
-    val Scala211        = "2.11.12"
     val Scala212        = "2.12.8"
     val Scalaz          = "7.2.28"
     val SourceCode      = "0.1.7"
@@ -54,7 +53,7 @@ object Microlibs {
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion                  := Ver.Scala212,
-      crossScalaVersions            := Seq(Ver.Scala211, Ver.Scala212),
+      crossScalaVersions            := Seq(Ver.Scala212),
       scalacOptions                ++= scalacFlags.value,
       scalacOptions in Test        --= Seq("-Ywarn-dead-code"),
       testFrameworks                := Nil,
