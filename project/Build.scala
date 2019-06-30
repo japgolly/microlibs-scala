@@ -165,6 +165,8 @@ object Microlibs {
     .settings(
       moduleName := "test-util",
       libraryDependencies ++= Seq(
+        "com.github.japgolly.univeq" %%% "univeq" % Ver.UnivEq,
+        "com.github.japgolly.univeq" %%% "univeq-scalaz" % Ver.UnivEq,
         "org.scalaz" %%% "scalaz-core" % Ver.Scalaz,
         "com.lihaoyi" %%% "sourcecode" % Ver.SourceCode))
 

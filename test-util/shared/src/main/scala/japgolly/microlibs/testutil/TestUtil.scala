@@ -1,5 +1,6 @@
 package japgolly.microlibs.testutil
 
+import japgolly.univeq.UnivEq
 import java.io.ByteArrayOutputStream
 import scala.annotation.tailrec
 import scalaz.Equal
@@ -111,13 +112,13 @@ trait TestUtil {
       fail("assertMultiline failed.")
     }
 
-  def assertMap[K, V: Equal](actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
+  def assertMap[K: UnivEq, V: Equal](actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(None, actual, expect)
 
-  def assertMap[K, V: Equal](name: => String, actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
+  def assertMap[K: UnivEq, V: Equal](name: => String, actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(Some(name), actual, expect)
 
-  def assertMapO[K, V: Equal](name: => Option[String], actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit = {
+  def assertMapO[K: UnivEq, V: Equal](name: => Option[String], actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit = {
     assertSet(name.fold("Map keys")(_ + " keys"), actual.keySet, expect.keySet)
     val bad = actual.keysIterator.filter(k => actual(k) ≠ expect(k))
     if (bad.nonEmpty) {
@@ -244,12 +245,12 @@ trait TestUtil {
     }
   }
 
-  def assertSet[A](actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(actual, expect.toSet)
-  def assertSet[A](actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(None, actual, expect)
-  def assertSet[A](name: => String, actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(name, actual, expect.toSet)
-  def assertSet[A](name: => String, actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(Some(name), actual, expect)
+  def assertSet[A: UnivEq](actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(actual, expect.toSet)
+  def assertSet[A: UnivEq](actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(None, actual, expect)
+  def assertSet[A: UnivEq](name: => String, actual: Set[A])(expect: A*)(implicit q: Line): Unit = assertSet(name, actual, expect.toSet)
+  def assertSet[A: UnivEq](name: => String, actual: Set[A], expect: Set[A])(implicit q: Line): Unit = assertSetO(Some(name), actual, expect)
 
-  def assertSetO[A](name: => Option[String], actual: Set[A], expect: Set[A])(implicit q: Line): Unit =
+  def assertSetO[A: UnivEq](name: => Option[String], actual: Set[A], expect: Set[A])(implicit q: Line): Unit =
     if (actual != expect) {
       val missing = expect -- actual
       val unexpected = actual -- expect
