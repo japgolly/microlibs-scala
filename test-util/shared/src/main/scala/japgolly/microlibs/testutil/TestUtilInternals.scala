@@ -32,6 +32,9 @@ object TestUtilInternals {
 
   def lead(s: String) = s"$RED_B$s$RESET "
 
+  def descMethod(method: String, desc: Option[String]): String =
+    s"$method${desc.fold("")("(" + _ + ")")}"
+
   def failureStart(name: Option[String], leadSize: Int): Unit = {
     println()
     name.foreach(n => println(lead(">" * leadSize) + BRIGHT_YELLOW + n + RESET))

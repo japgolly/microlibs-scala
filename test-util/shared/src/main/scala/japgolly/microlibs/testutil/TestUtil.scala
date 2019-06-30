@@ -37,7 +37,7 @@ trait TestUtilWithoutUnivEq {
     failMethod(method, Some(desc))
 
   def failMethod(method: String, desc: Option[String])(implicit q: Line): Nothing =
-    fail(s"$method${desc.fold("")("(" + _ + ")")} failed.")
+    fail(descMethod(method, desc) + " failed.")
 
   def onFail[A](body: => A)(onFail: => Any): A =
     try
@@ -159,16 +159,55 @@ trait TestUtilWithoutUnivEq {
 
     val pass = lenOk && failures.isEmpty
     if (!pass) {
-      val av = actual.toVector
-      val ev = expect.toVector
-      val n = name.fold("")(_ + ": ")
+      val av         = actual.toVector
+      val ev         = expect.toVector
+      val lenMin     = av.length min ev.length
+      val lenMax     = av.length max ev.length - 1
+      val leadFmt    = s"[%${lenMax.toString.length}d]"
+      val leadColour = RED_B
+      val leadSize   = leadFmt.format(lenMax).length
+      val leadBlank  = leadColour + (" " * leadSize)
+      val n = name
       withAtomicOutput {
-        if (!lenOk) printFailEA(Some(n + "size"), actual = av.length, expect = ev.length)
-        for (i <- failures.reverse) {
-          val a = av(i)
-          val e = ev(i)
-          printFailEA(Some(s"${n}element ($i)"), actual = a, expect = e)
+        failureStart(Some(descMethod("assertSeq", n)), leadSize + 8)
+
+        var prevWasMultiline = false
+        def log(i: Int): Unit = {
+          val oa = av.lift(i)
+          val oe = ev.lift(i)
+          val lead = leadColour + leadFmt.format(i)
+          def le(e: Any) = s" expect:$RESET ${BOLD_BRIGHT_GREEN}${e}$RESET"
+          def la(a: Any) = s" actual:$RESET ${BOLD_BRIGHT_RED}${a}$RESET"
+          if (prevWasMultiline) println()
+          (oa, oe) match {
+
+            case (Some(a), Some(e)) =>
+              //val as = "" + a
+              //val es = "" + e
+              //if (as.length + es.length <= 110) {
+              //  prevWasMultiline = false
+              //  println(s"$lead noteql:$RESET ${BOLD_BRIGHT_GREEN}${es}$RESET ≠ ${BOLD_BRIGHT_RED}${as}$RESET")
+              //} else {
+                prevWasMultiline = true
+                println(lead + le(e))
+                println(leadBlank + la(a))
+              //}
+
+            case (Some(a), None) =>
+              prevWasMultiline = false
+              println(lead + la(a))
+
+            case (None, Some(e)) =>
+              prevWasMultiline = false
+              println(lead + le(e))
+
+            case (None, None) => ()
+          }
         }
+
+        failures.reverse.foreach(log)
+        (lenMin to lenMax).foreach(log)
+        println()
         fail(s"assertSeq${name.fold("")("(" + _ + ")")} failed.")
       }
     }
