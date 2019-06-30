@@ -78,7 +78,7 @@ trait TestUtil {
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertMultiline(actual: String, expect: String)(implicit q: Line): Unit =
-    if (actual != expect) {
+    if (actual != expect) withAtomicOutput {
       println()
       val AE = List(actual, expect).map(_.split("\n"))
       val List(as, es) = AE
@@ -153,13 +153,15 @@ trait TestUtil {
       val av = actual.toVector
       val ev = expect.toVector
       val n = name.fold("")(_ + ": ")
-      if (!lenOk) printFailEA(Some(n + "size"), actual = av.length, expect = ev.length)
-      for (i <- failures.reverse) {
-        val a = av(i)
-        val e = ev(i)
-        printFailEA(Some(s"${n}element ($i)"), actual = a, expect = e)
+      withAtomicOutput {
+        if (!lenOk) printFailEA(Some(n + "size"), actual = av.length, expect = ev.length)
+        for (i <- failures.reverse) {
+          val a = av(i)
+          val e = ev(i)
+          printFailEA(Some(s"${n}element ($i)"), actual = a, expect = e)
+        }
+        fail(s"assertSeq${name.fold("")("(" + _ + ")")} failed.")
       }
-      fail(s"assertSeq${name.fold("")("(" + _ + ")")} failed.")
     }
   }
 
@@ -183,11 +185,13 @@ trait TestUtil {
           println(lead(title) + col + x + RESET)
         }
 
-      failureStart(name, leadSize)
-      show(" missing:", BRIGHT_CYAN, missing)
-      show("unwanted:", BOLD_BRIGHT_RED, unexpected)
-      println()
-      fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
+      withAtomicOutput {
+        failureStart(name, leadSize)
+        show(" missing:", BRIGHT_CYAN, missing)
+        show("unwanted:", BOLD_BRIGHT_RED, unexpected)
+        println()
+        fail(s"assertSet${name.fold("")("(" + _ + ")")} failed.")
+      }
     }
 
   def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
