@@ -42,6 +42,7 @@ object Microlibs {
       "-opt:l:inline",
       "-opt-inline-from:scala.**",
       "-opt-inline-from:japgolly.microlibs.**",
+      "-opt-inline-from:japgolly.univeq.**",
       "-Ywarn-dead-code",
       "-Ywarn-unused",
       "-Ywarn-value-discard"))
