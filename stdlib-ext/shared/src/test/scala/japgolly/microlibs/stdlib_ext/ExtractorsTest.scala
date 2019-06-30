@@ -5,7 +5,6 @@ import java.time.Duration
 import utest._
 
 object ExtractorsTest extends TestSuite {
-  implicit def equalDammit[A]: scalaz.Equal[A] = scalaz.Equal.equalA[A]
 
   override def tests = TestSuite {
 
