@@ -24,7 +24,9 @@ object TestUtilInternals {
   final val BOLD_BRIGHT_MAGENTA = "\u001b[95;1m"
   final val BOLD_BRIGHT_CYAN    = "\u001b[96;1m"
   final val BOLD_BRIGHT_WHITE   = "\u001b[97;1m"
-    
+
+  private[testutil] val printMutex = new AnyRef
+
   def lead(s: String) = s"$RED_B$s$RESET "
 
   def failureStart(name: Option[String], leadSize: Int): Unit = {

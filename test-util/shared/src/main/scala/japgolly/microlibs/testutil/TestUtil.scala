@@ -1,5 +1,6 @@
 package japgolly.microlibs.testutil
 
+import java.io.ByteArrayOutputStream
 import scala.annotation.tailrec
 import scalaz.Equal
 import scalaz.syntax.equal._
@@ -9,6 +10,17 @@ import TestUtilInternals._
 
 object TestUtil extends TestUtil
 trait TestUtil {
+
+  def withAtomicOutput[A](a: => A): A = {
+    val os = new ByteArrayOutputStream()
+    try
+      printMutex.synchronized(
+        Console.withOut(os)(
+          Console.withErr(os)(
+            a)))
+    finally
+      print(os.toString())
+  }
 
   def fail(msg: String, clearStackTrace: Boolean = true, addSrcHint: Boolean = true)(implicit q: Line): Nothing = {
     val m = if (addSrcHint) TestUtilInternals.addSrcHint(msg) else msg
