@@ -7,9 +7,9 @@ import utest._
 
 object UtilsTest extends TestSuite {
 
-  override def tests = TestSuite {
+  override def tests = Tests {
 
-    'quickStringExists {
+    "quickStringExists" - {
       val x = "x"
       val p: Prop[Set[String]] =
         Prop.test("quickStringExists", ss => {
@@ -24,7 +24,7 @@ object UtilsTest extends TestSuite {
       Gen.string(0 to 8).set.mustSatisfy(p)
     }
 
-    'quickStringLookup {
+    "quickStringLookup" - {
       val x = "x"
       val p: Prop[Map[String, Int]] =
         Prop.test("quickStringLookup", m => {

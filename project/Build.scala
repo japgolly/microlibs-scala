@@ -21,13 +21,14 @@ object Microlibs {
     val JavaTimeScalaJs = "0.2.5"
     val KindProjector   = "0.10.3"
     val MacroParadise   = "2.1.1"
-    val Monocle         = "1.5.0"
-    val MTest           = "0.6.7"
-    val Nyaya           = "0.8.1"
+    val MTest           = "0.7.1"
+    val Nyaya           = "0.9.0-RC1"
     val Scala212        = "2.12.8"
+    val Scala213        = "2.13.0"
+    val ScalaCollCompat = "2.1.2"
     val Scalaz          = "7.2.28"
     val SourceCode      = "0.1.7"
-    val UnivEq          = "1.0.8"
+    val UnivEq          = "1.1.0-RC3"
   }
 
   def scalacFlags = Def.setting(
@@ -40,7 +41,6 @@ object Microlibs {
       "-language:higherKinds",
       "-language:existentials",
       "-opt:l:inline",
-      "-opt-inline-from:scala.**",
       "-opt-inline-from:japgolly.microlibs.**",
       "-opt-inline-from:japgolly.univeq.**",
       "-Ywarn-dead-code",
@@ -52,10 +52,10 @@ object Microlibs {
       organization                  := "com.github.japgolly.microlibs",
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion                  := Ver.Scala212,
-      crossScalaVersions            := Seq(Ver.Scala212),
+      scalaVersion                  := Ver.Scala213,
+      crossScalaVersions            := Seq(Ver.Scala212, Ver.Scala213),
       scalacOptions                ++= scalacFlags.value,
-      scalacOptions in Test        --= Seq("-Ywarn-dead-code"),
+      scalacOptions in Test        --= Seq("-Ywarn-dead-code", "-Ywarn-unused"),
       testFrameworks                := Nil,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
       triggeredMessage              := Watched.clearWhenTriggered,
@@ -116,7 +116,9 @@ object Microlibs {
   lazy val macroUtils = crossProject(JVMPlatform, JSPlatform)
     .in(file("macro-utils"))
     .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
-    .settings(moduleName := "macro-utils")
+    .settings(
+      moduleName := "macro-utils",
+      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.ScalaCollCompat)
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js
@@ -131,8 +133,9 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, utestSettings)
     .settings(
       libraryDependencies ++= Seq(
-        "org.scalaz"                 %%% "scalaz-core"   % Ver.Scalaz,
-        "com.github.japgolly.univeq" %%% "univeq-scalaz" % Ver.UnivEq))
+        "org.scalaz"                 %%% "scalaz-core"             % Ver.Scalaz,
+        "com.github.japgolly.univeq" %%% "univeq-scalaz"           % Ver.UnivEq,
+        "org.scala-lang.modules"     %%% "scala-collection-compat" % Ver.ScalaCollCompat))
 
   lazy val recursionJVM = recursion.jvm
   lazy val recursionJS  = recursion.js
@@ -155,7 +158,9 @@ object Microlibs {
   lazy val stdlibExt = crossProject(JVMPlatform, JSPlatform)
     .in(file("stdlib-ext"))
     .configureCross(commonSettings, publicationSettings, utestSettings, useTestUtil)
-    .settings(moduleName := "stdlib-ext")
+    .settings(
+      moduleName := "stdlib-ext",
+      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.ScalaCollCompat)
     .jsSettings(libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % Ver.JavaTimeScalaJs % Test)
 
   lazy val testUtilJVM = testUtil.jvm

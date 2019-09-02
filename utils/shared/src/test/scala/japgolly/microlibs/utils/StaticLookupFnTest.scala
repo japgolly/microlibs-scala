@@ -30,74 +30,74 @@ object StaticLookupFnTest extends TestSuite {
 
   override def tests = Tests {
 
-    'array {
+    "array" - {
       val dsl = StaticLookupFn.useArrayBy(values)(_.key)
 
-      'dup - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
+      "dup" - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
 
-      'total - {
+      "total" - {
         val f = dsl.total
         values.foreach(a => f(a.key) ==> a)
         badKeys.foreach(assertNoKey(f))
       }
 
-      'option - {
+      "option" - {
         val f = dsl.toOption
         values.foreach(a => f(a.key) ==> Some(a))
         badKeys.foreach(f(_) ==> None)
       }
 
-      'either - {
+      "either" - {
         val f = dsl.toEither(identity)
         values.foreach(a => f(a.key) ==> Right(a))
         badKeys.foreach(k => f(k) ==> Left(k))
       }
     }
 
-    'map {
+    "map" - {
       val dsl = StaticLookupFn.useMapBy(values)(_.key)
 
-      'dup - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
+      "dup" - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
 
-      'total - {
+      "total" - {
         val f = dsl.total
         values.foreach(a => f(a.key) ==> a)
         badKeys.foreach(assertNoKey(f))
       }
 
-      'option - {
+      "option" - {
         val f = dsl.toOption
         values.foreach(a => f(a.key) ==> Some(a))
         badKeys.foreach(f(_) ==> None)
       }
 
-      'either - {
+      "either" - {
         val f = dsl.toEither(identity)
         values.foreach(a => f(a.key) ==> Right(a))
         badKeys.foreach(k => f(k) ==> Left(k))
       }
     }
 
-    'mapTiny {
+    "mapTiny" - {
       // Because I may have some optimisations to match Scala's optimised representations of Maps with <= 4 keys
       val values = StaticLookupFnTest.this.values.take(3)
       val dsl = StaticLookupFn.useMapBy(values)(_.key)
 
-      'dup - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
+      "dup" - assertDup(StaticLookupFn.useArrayBy(Dup :: values)(_.key))
 
-      'total - {
+      "total" - {
         val f = dsl.total
         values.foreach(a => f(a.key) ==> a)
         badKeys.foreach(assertNoKey(f))
       }
 
-      'option - {
+      "option" - {
         val f = dsl.toOption
         values.foreach(a => f(a.key) ==> Some(a))
         badKeys.foreach(f(_) ==> None)
       }
 
-      'either - {
+      "either" - {
         val f = dsl.toEither(identity)
         values.foreach(a => f(a.key) ==> Right(a))
         badKeys.foreach(k => f(k) ==> Left(k))

@@ -1,8 +1,7 @@
 package japgolly.microlibs.nonempty
 
 import japgolly.univeq.UnivEq
-import scala.collection.GenTraversableOnce
-import scala.collection.generic.CanBuildFrom
+import scala.collection.compat._
 import scalaz.Semigroup
 
 /**
@@ -55,7 +54,7 @@ final class NonEmptySet[A] private[nonempty] (val head: A, val tail: Set[A]) {
     else
       new NonEmptySet(head, tail + a)
 
-  def ++(as: GenTraversableOnce[A]): NonEmptySet[A] =
+  def ++(as: IterableOnce[A]): NonEmptySet[A] =
     NonEmptySet(head, tail ++ as)
 
   def ++(as: NonEmptySet[A]): NonEmptySet[A] =
@@ -76,20 +75,22 @@ final class NonEmptySet[A] private[nonempty] (val head: A, val tail: Set[A]) {
   def reduce[B >: A](f: (B, B) => B): B =
     reduceMapLeft1[B](a => a)(f)
 
-  def toStream = whole.toStream
   def toVector = whole.toVector
 
   def toNEV: NonEmptyVector[A] =
     NonEmptyVector(head, tail.toVector)
 
   def mapV[B](f: A => B): NonEmptyVector[B] = {
-    val b = implicitly[CanBuildFrom[Nothing, B, Vector[B]]].apply()
+    val b = implicitly[Factory[B, Vector[B]]].newBuilder
     tail.foreach(b += f(_))
     NonEmptyVector(f(head), b.result())
   }
 
   def iterator: Iterator[A] =
     whole.iterator
+
+  def to[B](factory: Factory[A, B]): B =
+    factory.fromSpecific(whole)
 }
 
 // =====================================================================================================================

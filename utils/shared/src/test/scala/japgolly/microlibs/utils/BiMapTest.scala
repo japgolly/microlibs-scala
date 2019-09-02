@@ -3,7 +3,7 @@ package japgolly.microlibs.utils
 import utest._
 
 object BiMapTest extends TestSuite {
-  override def tests = TestSuite {
+  override def tests = Tests {
     "Adding & retrieving" - {
       val b = BiMap.newBuilder[String, Int]
       b += ("Three" -> 3)

@@ -1,6 +1,7 @@
 package japgolly.microlibs.utils
 
 import japgolly.univeq.UnivEq
+import scala.collection.compat._
 import scala.collection.immutable.IntMap
 
 /**
@@ -64,10 +65,10 @@ object BiMap {
   def singleton[A: UnivEq, B: UnivEq](a: A, b: B): BiMap[A, B] =
     force[A, B](Map.empty.updated(a, b))(Map.empty.updated(b, a))
 
-  def index[A: UnivEq](as: TraversableOnce[A]): BiMap[A, Int] = {
+  def index[A: UnivEq](as: IterableOnce[A]): BiMap[A, Int] = {
     var i = 0
     val b = newBuilderInt[A]
-    as.foreach { a =>
+    as.iterator.foreach { a =>
       b.update(a, i)
       i += 1
     }
@@ -89,8 +90,8 @@ object BiMap {
     @inline final def +=(ab: (A, B)): Unit =
       update(ab._1, ab._2)
 
-    final def ++=(abs: TraversableOnce[(A, B)]): Unit =
-      abs.foreach(t => update(t._1, t._2))
+    final def ++=(abs: IterableOnce[(A, B)]): Unit =
+      abs.iterator.foreach(t => update(t._1, t._2))
   }
 
   final class Builder[A: UnivEq, B: UnivEq] extends AbstractBuilder[A, B] {

@@ -1,8 +1,8 @@
 package japgolly.microlibs.nonempty
 
 import japgolly.univeq.UnivEq
-import scala.collection.{AbstractIterator, GenTraversableOnce}
-import scala.collection.generic.CanBuildFrom
+import scala.collection.AbstractIterator
+import scala.collection.compat._
 import scala.collection.immutable.Range
 import scala.math.Ordering
 import scalaz._
@@ -95,7 +95,7 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   def +:[B >: A](a: B): NonEmptyVector[B] =
     NonEmptyVector(a, head +: tail)
 
-  def ++[B >: A](as: GenTraversableOnce[B]): NonEmptyVector[B] =
+  def ++[B >: A](as: IterableOnce[B]): NonEmptyVector[B] =
     mapTail(_ ++ as)
 
   def ++[B >: A](b: NonEmptyVector[B]): NonEmptyVector[B] =
@@ -133,7 +133,7 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
     intercalateF(b)(a => a)
 
   def intercalateF[B](b: B)(f: A => B): NonEmptyVector[B] = {
-    val r = implicitly[CanBuildFrom[Nothing, B, Vector[B]]].apply()
+    val r = implicitly[Factory[B, Vector[B]]].newBuilder
     for (a <- tail) {
       r += b
       r += f(a)
@@ -149,8 +149,6 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
 
   def iterator: Iterator[A] =
     whole.iterator
-
-  def toStream = whole.toStream
 
   def mapToNES[B: UnivEq](f: A => B): NonEmptySet[B] =
     NonEmptySet force iterator.map(f).toSet
@@ -222,6 +220,9 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   def mkString(sep: String): String = mkString("", sep, "")
 
   def mkString: String = mkString("")
+
+  def to[B](factory: Factory[A, B]): B =
+    factory.fromSpecific(whole)
 }
 
 // =====================================================================================================================
@@ -281,7 +282,7 @@ object NonEmptyVector extends NonEmptyVectorImplicits0 {
       ()
     }
 
-    def ++=(as: TraversableOnce[A]): Unit = {
+    def ++=(as: IterableOnce[A]): Unit = {
       tail ++= as
       ()
     }

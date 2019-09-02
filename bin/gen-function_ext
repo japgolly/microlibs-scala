@@ -7,7 +7,7 @@ def T(i: Int) = (64+i).toChar.toString
 var boo = Seq.empty[String]
 
 def mergeFn(name: String, i: String, is: String, o: String, op: String) =
-  s"  @inline def $name(y: $i⇒$o): $i⇒$o = ($is) ⇒ x($is) $op y($is)"
+  s"  @inline def $name(y: $i=>$o): $i=>$o = ($is) => x($is) $op y($is)"
 def and(i: String, is: String) = mergeFn("&&", i, is, "Boolean", "&&")
 def or (i: String, is: String) = mergeFn("||", i, is, "Boolean", "||")
 
@@ -22,8 +22,8 @@ for (i <- (1 to 22)) {
   val ac = Ac.toLowerCase
   val _s = List.fill(i)("_") mkString ","
 
-  boo :+= s"@inline final implicit class JSLE_Function${i}ToBool[$Ac](private val x: ($Ac) ⇒ Boolean) extends AnyVal {"
-  boo :+= s"  @inline def unary_! : ($Ac) ⇒ Boolean = !x(${_s})"
+  boo :+= s"@inline final implicit class JSLE_Function${i}ToBool[$Ac](private val x: ($Ac) => Boolean) extends AnyVal {"
+  boo :+= s"  @inline def unary_! : ($Ac) => Boolean = !x(${_s})"
   boo :+= and(s"($Ac)", ac)
   boo :+= or(s"($Ac)", ac)
   boo :+= "}"

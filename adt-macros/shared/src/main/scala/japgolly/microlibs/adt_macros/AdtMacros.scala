@@ -37,7 +37,7 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
   def implAdtIso[Adt: c.WeakTypeTag, T: c.WeakTypeTag](debug: Boolean)(f: c.Expr[Adt => T]): c.Expr[AdtIso[Adt, T]] = {
     val Adt       = weakTypeOf[Adt]
     val T         = weakTypeOf[T]
-    val fromFn    = readMacroArg_tToTree(f).toStream
+    val fromFn    = readMacroArg_tToTree(f)
     val adtTypes  = findConcreteTypesNE(Adt, LeavesOnly)
     var toCases   = Vector.empty[CaseDef]
     var toValues  = Set.empty[Any]

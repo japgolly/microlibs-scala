@@ -4,14 +4,14 @@ import utest._
 
 object MemoTest extends TestSuite {
 
-  override def tests = TestSuite {
+  override def tests = Tests {
     var i = 0
     def inc() = {i += 1; i}
 
     def test(actual: Int, expect: Int): Unit =
       assert(actual == expect)
 
-    'fn1 {
+    "fn1" - {
       val f = Memo((_: Int) + inc())
       test(f(0), 1)
       test(f(0), 1)
@@ -23,7 +23,7 @@ object MemoTest extends TestSuite {
       test(f(5), 8)
     }
 
-    'int {
+    "int" - {
       val f = Memo.int(_ + inc())
       test(f(0), 1)
       test(f(0), 1)
@@ -35,7 +35,7 @@ object MemoTest extends TestSuite {
       test(f(5), 8)
     }
 
-    'curry {
+    "curry" - {
       val f = Memo.curry2((m: Int) => {
         val x = inc()
         (n: Int) => 1000*m +100*n + x*10 + inc()
