@@ -1,6 +1,7 @@
 package japgolly.microlibs.macro_utils
 
 import scala.annotation.tailrec
+import scala.collection.compat._
 
 object MacroUtils {
   sealed trait FindSubClasses
@@ -113,7 +114,7 @@ abstract class MacroUtils {
 
   final def crawlADT[A](tpe    : Type,
                         attempt: (ClassSymbol, Type) => Option[A],
-                        giveUp : (ClassSymbol, Type) => TraversableOnce[A]): Vector[A] = {
+                        giveUp : (ClassSymbol, Type) => IterableOnce[A]): Vector[A] = {
     var seen = Set.empty[Type]
     val results = Vector.newBuilder[A]
 
@@ -234,7 +235,7 @@ abstract class MacroUtils {
     val subType     = child.asType.toType // FIXME: Broken for path dependent types
     val typeParams  = child.asType.typeParams
     val typeArgs    = thisType(child).baseType(root.typeSymbol).typeArgs
-    val mapping     = (typeArgs.map(_.typeSymbol), root.typeArgs).zipped.toMap
+    val mapping     = typeArgs.iterator.map(_.typeSymbol).zip(root.typeArgs.iterator).toMap
     val newTypeArgs = typeParams.map(mapping.withDefault(_.asType.toType))
     val applied     = appliedType(subType.typeConstructor, newTypeArgs)
     val result      = existentialAbstraction(typeParams, applied)
@@ -250,9 +251,9 @@ abstract class MacroUtils {
       }
     go(Vector.empty, trees)
   }
-//  final def flattenBlocks(trees: GenTraversable[Tree]): Vector[Tree] = {
+//  final def flattenBlocks(trees: Iterable[Tree]): Vector[Tree] = {
 //    import _
-//    @tailrec final def go(acc: Vector[Tree], ts: GenTraversable[Tree]): Vector[Tree] =
+//    @tailrec final def go(acc: Vector[Tree], ts: Iterable[Tree]): Vector[Tree] =
 //      ts.headOption match {
 //        case None              => acc
 //        case Some(Block(a, b)) => go(acc, (a :+ b) ++ ts.tail)
@@ -457,11 +458,11 @@ abstract class MacroUtils {
     c.Expr[T => T](q"(t: $T) => t")
   }
 
-  def deterministicOrderT(ts: TraversableOnce[Type]): Vector[Type] =
-    ts.toVector.sortBy(_.typeSymbol.fullName)
+  def deterministicOrderT(ts: IterableOnce[Type]): Vector[Type] =
+    ts.iterator.toVector.sortBy(_.typeSymbol.fullName)
 
-  def deterministicOrderC(ts: TraversableOnce[ClassSymbol]): Vector[ClassSymbol] =
-    ts.toVector.sortBy(_.fullName)
+  def deterministicOrderC(ts: IterableOnce[ClassSymbol]): Vector[ClassSymbol] =
+    ts.iterator.toVector.sortBy(_.fullName)
 
   final def replaceMacroMethod(newMethod: String) =
     c.macroApplication match {

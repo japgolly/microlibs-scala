@@ -37,7 +37,7 @@ object ParseChronoUnit {
   private val TextToChronoUnitMap: Map[String, ChronoUnit] = {
     var m = Map.empty[String, ChronoUnit]
     def add(u: ChronoUnit, others: String*): Unit =
-      (others.toIterator ++ Iterator.single(u.toString))
+      (others.iterator ++ Iterator.single(u.toString))
         .map(normalise)
         .foreach(s => m = m.updated(s, u))
     ChronoUnit.values() foreach {

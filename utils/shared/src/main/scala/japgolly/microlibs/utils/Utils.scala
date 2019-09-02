@@ -1,13 +1,14 @@
 package japgolly.microlibs.utils
 
-import japgolly.univeq.UnivEq
 import japgolly.microlibs.stdlib_ext.StdlibExt._
+import japgolly.univeq.UnivEq
+import scala.collection.compat._
 
 object Utils {
 
-  def dups[A: UnivEq](as: TraversableOnce[A]): Iterator[A] = {
+  def dups[A: UnivEq](as: IterableOnce[A]): Iterator[A] = {
     val seen = collection.mutable.HashSet.empty[A]
-    as.toIterator.map { a =>
+    as.iterator.map { a =>
       if (seen contains a)
         Some(a)
       else {

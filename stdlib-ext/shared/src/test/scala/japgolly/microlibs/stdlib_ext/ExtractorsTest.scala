@@ -6,9 +6,9 @@ import utest._
 
 object ExtractorsTest extends TestSuite {
 
-  override def tests = TestSuite {
+  override def tests = Tests {
 
-    'duration {
+    "duration" - {
       "2d" - assertEq(ParseDuration.unapply("2d"), Option(Duration.ofDays(2)))
       "2d9s" - assertEq(ParseDuration.unapply("2d9s"), Option(Duration.ofDays(2) plus Duration.ofSeconds(9)))
       "2D9S" - assertEq(ParseDuration.unapply("2D9S"), Option(Duration.ofDays(2) plus Duration.ofSeconds(9)))

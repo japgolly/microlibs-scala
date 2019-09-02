@@ -19,7 +19,7 @@ object ScalazMacrosTest extends TestSuite {
   }
 
   override def tests = Tests {
-    'X {
+    "X" - {
       ScalazMacros.deriveEqual[X[Int, Int]]
       ()
     }

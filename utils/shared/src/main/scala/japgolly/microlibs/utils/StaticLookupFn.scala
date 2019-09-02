@@ -10,7 +10,7 @@ import scala.reflect.ClassTag
   */
 object StaticLookupFn {
 
-  def useArray[A >: Null : ClassTag](as: Traversable[(Int, A)]): ArrayDsl[A] =
+  def useArray[A >: Null : ClassTag](as: Iterable[(Int, A)]): ArrayDsl[A] =
     if (as.isEmpty)
       new ArrayDsl[A] with Dsl.EmptyBase[Int, A] {
         override def to[V >: Null : ClassTag](ok: A => V, ko: Int => V) = ko
@@ -36,7 +36,7 @@ object StaticLookupFn {
         }
 
         private def mkArray[X >: Null : ClassTag](toX: A => X): Array[X] = {
-          val len = as.toIterator.map(_._1).max + 1
+          val len = as.iterator.map(_._1).max + 1
           val aa = Array.fill[A](len)(null)
           val ax = Array.fill[X](len)(null)
           for ((i, a) <- as) {
@@ -50,10 +50,10 @@ object StaticLookupFn {
           ax
         }
 
-        override protected def iterator() = as.toIterator
+        override protected def iterator() = as.iterator
       }
 
-  def useArrayBy[A >: Null : ClassTag](as: Traversable[A])(key: A => Int): DslBase[Int, A] =
+  def useArrayBy[A >: Null : ClassTag](as: Iterable[A])(key: A => Int): DslBase[Int, A] =
     useArray(as.map(a => (key(a), a)))
 
   trait ArrayDsl[A] extends DslBase[Int, A] {
@@ -62,7 +62,7 @@ object StaticLookupFn {
 
   // ===================================================================================================================
 
-  def useMap[K: UnivEq, V](kvs: Traversable[(K, V)]): Dsl[K, V] =
+  def useMap[K: UnivEq, V](kvs: Iterable[(K, V)]): Dsl[K, V] =
     if (kvs.isEmpty)
       Dsl.empty
     else
@@ -89,10 +89,10 @@ object StaticLookupFn {
           mx
         }
 
-        override protected def iterator() = kvs.toIterator
+        override protected def iterator() = kvs.iterator
       }
 
-  def useMapBy[K: UnivEq, V](vs: Traversable[V])(k: V => K) =
+  def useMapBy[K: UnivEq, V](vs: Iterable[V])(k: V => K) =
     useMap(vs.map(v => k(v) -> v))
 
 

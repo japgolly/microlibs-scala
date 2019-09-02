@@ -4,9 +4,10 @@ import japgolly.univeq.UnivEq
 import japgolly.univeq.UnivEqScalaz.scalazEqualFromUnivEq
 import java.io.ByteArrayOutputStream
 import scala.annotation.tailrec
+import scala.collection.compat._
+import scala.io.AnsiColor._
 import scalaz.Equal
 import scalaz.syntax.equal._
-import scala.io.AnsiColor._
 import sourcecode.Line
 import TestUtilInternals._
 
@@ -93,7 +94,7 @@ trait TestUtilWithoutUnivEq {
       val AE = List(actual, expect).map(_.split("\n"))
       val List(as, es) = AE
       val lim = as.length max es.length
-      val List(maxA,_) = AE.map(x => (0 #:: x.map(_.length).toStream).max)
+      val List(maxA,_) = AE.map(x => (0 :: x.iterator.map(_.length).toList).max)
       val maxL = lim.toString.length
       println(s"${BRIGHT_YELLOW}assertMultiline:$RESET actual | expect")
       val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxA}s | | %s${RESET}\n"
@@ -133,17 +134,17 @@ trait TestUtilWithoutUnivEq {
     }
   }
 
-  def assertSeq[A: Equal](actual: Traversable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(actual, expect.toSeq)
-  def assertSeq[A: Equal](actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = assertSeqO(None, actual, expect)
-  def assertSeq[A: Equal](name: => String, actual: Traversable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(name, actual, expect.toSeq)
-  def assertSeq[A: Equal](name: => String, actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = assertSeqO(Some(name), actual, expect)
+  def assertSeq[A: Equal](actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(actual, expect.toSeq)
+  def assertSeq[A: Equal](actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(None, actual, expect)
+  def assertSeq[A: Equal](name: => String, actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(name, actual, expect.toSeq)
+  def assertSeq[A: Equal](name: => String, actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(Some(name), actual, expect)
 
-  def assertSeqO[A: Equal](name: => Option[String], actual: Traversable[A], expect: Traversable[A])(implicit q: Line): Unit = {
+  def assertSeqO[A: Equal](name: => Option[String], actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = {
     var failures = List.empty[Int]
     var lenOk    = true
 
-    val ia = actual.toIterator
-    val ie = expect.toIterator
+    val ia = actual.iterator
+    val ie = expect.iterator
     @tailrec def go(i: Int): Unit =
       if (ia.hasNext) {
         val a = ia.next()
@@ -214,20 +215,20 @@ trait TestUtilWithoutUnivEq {
     }
   }
 
-  def assertSeqIgnoreOrder[A: Equal](actual: TraversableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(actual, expect.toSeq)
-  def assertSeqIgnoreOrder[A: Equal](actual: TraversableOnce[A], expect: TraversableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(None, actual, expect)
-  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: TraversableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(name, actual, expect.toSeq)
-  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: TraversableOnce[A], expect: TraversableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
+  def assertSeqIgnoreOrder[A: Equal](actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Equal](actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(None, actual, expect)
+  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(name, actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
 
-  def assertSeqIgnoreOrderO[A](name: => Option[String], actual: TraversableOnce[A], expect: TraversableOnce[A])
+  def assertSeqIgnoreOrderO[A](name: => Option[String], actual: IterableOnce[A], expect: IterableOnce[A])
                               (implicit q: Line, A: Equal[A]): Unit =
     _assertSeqIgnoreOrderO("assertSeqIgnoreOrder")(name, actual, expect)
 
   private def _assertSeqIgnoreOrderO[A](methodName: String)
-                                       (name: => Option[String], actual: TraversableOnce[A], expect: TraversableOnce[A])
+                                       (name: => Option[String], actual: IterableOnce[A], expect: IterableOnce[A])
                                        (implicit q: Line, A: Equal[A]): Unit = {
-    val as = actual.toArray[Any]
-    val es = expect.toArray[Any]
+    val as = actual.iterator.toArray[Any]
+    val es = expect.iterator.toArray[Any]
     var matches = 0
 
     for (ia <- as.indices) {

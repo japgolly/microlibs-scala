@@ -1,6 +1,6 @@
 package japgolly.microlibs.stdlib_ext
 
-import scala.collection.generic.CanBuildFrom
+import scala.collection.compat._
 
 /**
   * Scala arrays don't support in-place modification.
@@ -54,8 +54,8 @@ final class MutableArray[A](underlying: Array[Any]) {
       .sort(Ordering.by((_: (B, A))._1))
       .map(_._2)
 
-  def to[Col[_]](implicit cbf: CanBuildFrom[Nothing, A, Col[A]]): Col[A] = {
-    val b = cbf()
+  def to[B](f: Factory[A, B]): B = {
+    val b = f.newBuilder
     b.sizeHint(length)
     iterator.foreach(b += _)
     b.result()
@@ -69,16 +69,15 @@ final class MutableArray[A](underlying: Array[Any]) {
 
   def mkString: String =
     array.mkString
-
 }
 
 // =====================================================================================================================
 
 object MutableArray {
 
-  def apply[A](as: TraversableOnce[A]): MutableArray[A] =
-    new MutableArray(as.toArray[Any])
+  def apply[A](as: IterableOnce[A]): MutableArray[A] =
+    new MutableArray(as.iterator.toArray[Any])
 
   def map[A, B](as: Iterable[A])(f: A => B): MutableArray[B] =
-    apply(as.toIterator.map(f))
+    apply(as.iterator.map(f))
 }

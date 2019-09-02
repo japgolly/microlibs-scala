@@ -51,7 +51,7 @@ object NonEmpty {
     def testEmptiness[A](isEmpty: A => Boolean): ProofMono[A] =
       Proof(a => if (isEmpty(a)) None else Some(new NonEmpty(a)))
 
-    implicit def proveTraversable[A <: Traversable[_]]: ProofMono[A] =
+    implicit def proveTraversable[A <: Iterable[_]]: ProofMono[A] =
       testEmptiness(_.isEmpty)
   }
 

@@ -7,26 +7,26 @@ object RecursionTest extends TestSuite {
 
   val eg1: FM = add(2, add(3, 11))
 
-  override def tests = TestSuite {
+  override def tests = Tests {
 
-    'cata {
+    "cata" - {
       val r = Recursion.cata(MathExpr.eval)(eg1)
       assert(r == 16)
     }
 
-    'ana {
+    "ana" - {
       val expr = Recursion.ana(MathExpr.plusOnes)(5)
       assert(expr == add(1, add(1, add(1, add(1, 1)))))
     }
 
-    'hylo {
+    "hylo" - {
       val n = 8
       val m = Recursion.hylo(MathExpr.plusOnes, MathExpr.eval)(n)
       assert(n == m)
     }
 
-    'prepro {
-      'stopAboveFive {
+    "prepro" - {
+      "stopAboveFive" - {
         val l = 1 to 10 toList
         val t = FixList(l: _*)
         val a = Recursion.prepro[ListF[Int, ?], Int](FixList.stopAboveFive, FixList.sum)(t)
@@ -34,7 +34,7 @@ object RecursionTest extends TestSuite {
         assert(a == expect)
       }
 
-      'zeroOutOdds {
+      "zeroOutOdds" - {
         val l = 1 to 10 toList
         val t = FixList(l: _*)
         val a = Recursion.prepro[ListF[Int, ?], Int](FixList.zeroOutOdds, FixList.sum)(t)
@@ -44,15 +44,15 @@ object RecursionTest extends TestSuite {
       }
     }
 
-    'postpro {
-      'stopAboveFive {
+    "postpro" - {
+      "stopAboveFive" - {
         val i = -3
         val a = Recursion.postpro[ListF[Int, ?], Int](FixList.ascStream, FixList.stopAboveFive)(i)
         val expect = (-3 to 5).toList
         assert(a == FixList(expect: _*))
       }
 
-      'zeroOutOdds {
+      "zeroOutOdds" - {
         val i = 93
         val a = Recursion.postpro[ListF[Int, ?], Int](FixList.ascStream, FixList.zeroOutOdds)(i)
         val aa = FixList.toList(a)
@@ -61,8 +61,8 @@ object RecursionTest extends TestSuite {
       }
     }
 
-    'coelgot {
-      'shortCircuit {
+    "coelgot" - {
+      "shortCircuit" - {
         var coalgs = Vector.empty[Int]
         var algs = Vector.empty[Int]
         val str = Recursion.coelgot[MathExpr, Int, String](
