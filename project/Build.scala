@@ -23,7 +23,7 @@ object Microlibs {
     val MacroParadise   = "2.1.1"
     val MTest           = "0.7.1"
     val Nyaya           = "0.9.0-RC1"
-    val Scala212        = "2.12.8"
+    val Scala212        = "2.12.10"
     val Scala213        = "2.13.0"
     val ScalaCollCompat = "2.1.2"
     val Scalaz          = "7.2.28"
