@@ -2,6 +2,7 @@ package japgolly.microlibs.utils
 
 import japgolly.microlibs.stdlib_ext.StdlibExt._
 import japgolly.univeq.UnivEq
+import java.time.{Duration, Instant}
 import scala.collection.compat._
 
 object Utils {
@@ -74,4 +75,17 @@ object Utils {
 
   def regexEscapeAndWrap(s: String): String =
     s"(?:${regexEscape(s)})"
+
+  def logTime[A](name: String)(a: => A): A = {
+    println(s"Task [$name] started...")
+    val start = Instant.now()
+    try
+      a
+    finally {
+      val end = Instant.now()
+      val dur = Duration.between(start, end)
+      println(s"Task [$name] completed in ${dur.conciseDesc}")
+    }
+  }
+
 }
