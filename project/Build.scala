@@ -19,16 +19,16 @@ object Microlibs {
   object Ver {
     val JAMM            = "0.3.3"
     val JavaTimeScalaJs = "0.2.6"
-    val KindProjector   = "0.10.3"
+    val KindProjector   = "0.11.0"
     val MacroParadise   = "2.1.1"
     val MTest           = "0.7.1"
-    val Nyaya           = "0.9.0-RC1"
+    val Nyaya           = "0.9.0"
     val Scala212        = "2.12.10"
-    val Scala213        = "2.13.0"
+    val Scala213        = "2.13.1"
     val ScalaCollCompat = "2.1.3"
-    val Scalaz          = "7.2.28"
+    val Scalaz          = "7.2.30"
     val SourceCode      = "0.1.9"
-    val UnivEq          = "1.1.0-RC3"
+    val UnivEq          = "1.1.0"
   }
 
   def scalacFlags = Def.setting(
@@ -58,12 +58,11 @@ object Microlibs {
       scalacOptions in Test        --= Seq("-Ywarn-dead-code", "-Ywarn-unused"),
       testFrameworks                := Nil,
       shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
-      triggeredMessage              := Watched.clearWhenTriggered,
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
       releaseVcsSign                := true,
-      addCompilerPlugin("org.typelevel" %% "kind-projector" % Ver.KindProjector)))
+      addCompilerPlugin("org.typelevel" %% "kind-projector" % Ver.KindProjector cross CrossVersion.full)))
 
   def definesMacros = ConfigureBoth(
     _.settings(
