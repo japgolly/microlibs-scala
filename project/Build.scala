@@ -28,7 +28,7 @@ object Microlibs {
     val ScalaCollCompat = "2.1.3"
     val Scalaz          = "7.2.30"
     val SourceCode      = "0.1.9"
-    val UnivEq          = "1.1.0"
+    val UnivEq          = "1.2.0"
   }
 
   def scalacFlags = Def.setting(
