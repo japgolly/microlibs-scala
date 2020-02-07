@@ -18,7 +18,7 @@ object Microlibs {
 
   object Ver {
     val JAMM            = "0.3.3"
-    val JavaTimeScalaJs = "0.2.6"
+    val JavaTimeScalaJs = "1.0.0"
     val KindProjector   = "0.11.0"
     val MacroParadise   = "2.1.1"
     val MTest           = "0.7.1"
