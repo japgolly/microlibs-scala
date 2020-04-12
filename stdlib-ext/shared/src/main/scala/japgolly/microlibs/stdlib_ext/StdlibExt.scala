@@ -25,7 +25,36 @@ object StdlibExt extends ScalaSpecificStdlibExt with PlatformSpecificStdlibExt {
       else
         indent(" " * spaces)
 
-    def removeAnsiEscapeCodes: String =
+    def unindent(spaces: Int): String = {
+      if (spaces <= 0)
+        return s
+
+      var smallest = spaces
+
+      val lines =
+        s.linesWithSeparators.map { line =>
+          if (line.stripLineEnd.nonEmpty) {
+            val indent = line.iterator.takeWhile(_ == ' ').size
+            if (indent == 0)
+              return s
+            if (indent < smallest)
+              smallest = indent
+          }
+          line
+        }.toArray
+
+      if (smallest == Int.MaxValue)
+        return s
+
+      lines.iterator.map { line =>
+        if (line.stripLineEnd.nonEmpty)
+          line.drop(smallest)
+        else
+          line
+      }.mkString("")
+    }
+
+  def removeAnsiEscapeCodes: String =
       s.replaceAll("[\u001b\u009b][\\[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]", "")
   }
 

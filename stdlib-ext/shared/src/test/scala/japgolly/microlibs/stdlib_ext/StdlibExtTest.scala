@@ -1,16 +1,89 @@
 package japgolly.microlibs.stdlib_ext
 
 import utest._
-import StdlibExt._
 import java.time.Duration
 
 object StdlibExtTest extends TestSuite {
+  import StdlibExt._
+
+  private def assertEq[A](a: A, e: A) =
+    assert(a == e)
+
   override def tests = Tests {
 
     "indent(int)" - {
       assert("a".indent(2) == "  a")
       assert("a\nb".indent(2) == "  a\n  b")
       assert("a\n  b".indent(2) == "  a\n    b")
+    }
+
+    "unindent" - {
+
+      "equal" - {
+        assertEq(
+          """  omfg
+            |
+            |  good
+            |""".stripMargin.unindent(2),
+          """omfg
+            |
+            |good
+            |""".stripMargin,
+        )
+      }
+
+      "oneUnder" - {
+        assertEq(
+          """  omfg
+            |
+            | good
+            |""".stripMargin.unindent(2),
+          """ omfg
+            |
+            |good
+            |""".stripMargin,
+        )
+      }
+
+      "oneOver" - {
+        assertEq(
+          """  omfg
+            |
+            |   good
+            |""".stripMargin.unindent(2),
+          """omfg
+            |
+            | good
+            |""".stripMargin,
+        )
+      }
+
+      "allUnder" - {
+        assertEq(
+          """ omfg
+            |
+            | good
+            |""".stripMargin.unindent(2),
+          """omfg
+            |
+            |good
+            |""".stripMargin,
+        )
+      }
+
+      "allOver" - {
+        assertEq(
+          """   omfg
+            |
+            |   good
+            |""".stripMargin.unindent(2),
+          """ omfg
+            |
+            | good
+            |""".stripMargin,
+        )
+      }
+
     }
 
     "vectorInsertBefore" - {
