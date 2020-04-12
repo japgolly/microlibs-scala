@@ -79,6 +79,20 @@ object StdlibExt extends ScalaSpecificStdlibExt with PlatformSpecificStdlibExt {
   implicit class JSLE_TraversableOnce[A](private val as: IterableOnce[A]) extends AnyVal {
     def mapToOrder: Map[A, Int] =
       as.iterator.zipWithIndex.toMap
+
+    def soleElement: Option[A] = {
+      val it = as.iterator
+      if (it.isEmpty)
+        None
+      else {
+        val a = it.next()
+        if (it.isEmpty)
+          Some(a)
+        else
+          None
+      }
+    }
+
   }
 
   implicit class JSLE_Iterator[A](private val as: Iterator[A]) extends AnyVal {
