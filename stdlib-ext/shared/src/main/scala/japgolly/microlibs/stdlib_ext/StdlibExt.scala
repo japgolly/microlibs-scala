@@ -8,7 +8,7 @@ import scala.collection.compat._
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 
-object StdlibExt extends ScalaSpecificStdlibExt {
+object StdlibExt extends ScalaSpecificStdlibExt with PlatformSpecificStdlibExt {
 
   // JSLE prefix = Japgolly StdLib Ext
 

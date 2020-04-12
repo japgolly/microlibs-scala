@@ -1,6 +1,7 @@
 package japgolly.microlibs.stdlib_ext
 
-import scala.collection.compat._
+import scala.collection.immutable.ArraySeq
+import scala.collection.{Factory, View}
 
 /**
   * Scala arrays don't support in-place modification.
@@ -29,7 +30,7 @@ final class MutableArray[A](underlying: Array[Any]) {
   def widen[B >: A]: MutableArray[B] =
     this.asInstanceOf[MutableArray[B]]
 
-  def iterator: Iterator[A] =
+  def iterator(): Iterator[A] =
     pendingMap match {
       case None    => array.iterator
       case Some(f) => underlying.iterator.map(f(_).asInstanceOf[A])
@@ -57,9 +58,15 @@ final class MutableArray[A](underlying: Array[Any]) {
   def to[B](f: Factory[A, B]): B = {
     val b = f.newBuilder
     b.sizeHint(length)
-    iterator.foreach(b += _)
+    iterator().foreach(b += _)
     b.result()
   }
+
+  def arraySeq: ArraySeq[A] =
+    ArraySeq.unsafeWrapArray(array)
+
+  def view: View[A] =
+    View.fromIteratorProvider(() => iterator())
 
   def mkString(start: String, sep: String, end: String): String =
     array.mkString(start, sep, end)
