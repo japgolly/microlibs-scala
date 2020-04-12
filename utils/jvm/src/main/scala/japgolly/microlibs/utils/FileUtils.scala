@@ -40,8 +40,7 @@ object FileUtils {
   }
 
   def readResource(filename: String): String = {
-    val res = if (filename.startsWith("/")) filename else "/" + filename
-    val src = Source.fromResource(res)(Codec.UTF8)
+    val src = Source.fromResource(filename)(Codec.UTF8)
     try src.mkString finally src.close()
   }
 
