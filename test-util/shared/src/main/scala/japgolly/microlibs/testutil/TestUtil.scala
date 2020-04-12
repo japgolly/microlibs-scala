@@ -351,6 +351,19 @@ trait TestUtilWithoutUnivEq extends TestUtilImplicits {
   def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
+  def assertEqWithTolerance(actual: Double, expect: Double, tolerance: Double = 0.01)(implicit l: Line): Unit = {
+    val d = Math.abs(actual - expect)
+    if (d > tolerance)
+      fail(
+        s"""
+           |assertEqWithTolerance failed.
+           |actual: $actual
+           |expect: $expect
+           | delta: $d
+           |   tol: $tolerance
+           |""".stripMargin)
+  }
+
 }
 
 trait TestUtil
