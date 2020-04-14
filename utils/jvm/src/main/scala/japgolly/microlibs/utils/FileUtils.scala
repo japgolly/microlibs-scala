@@ -39,9 +39,18 @@ object FileUtils {
     try src.mkString finally src.close()
   }
 
-  def readResource(filename: String): String = {
-    val src = Source.fromResource(filename)(Codec.UTF8)
-    try src.mkString finally src.close()
-  }
+  def readResource(filename: String, tryAlt: Boolean = true): String =
+    try {
+      val src = Source.fromResource(filename)(Codec.UTF8)
+      try src.mkString finally src.close()
+    } catch {
+      case _: NullPointerException if tryAlt =>
+        val alt =
+          if (filename startsWith "/")
+            filename.drop(1)
+          else
+            "/" + filename
+        readResource(alt, tryAlt = false)
+    }
 
 }
