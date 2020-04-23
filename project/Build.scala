@@ -22,7 +22,7 @@ object Microlibs {
     val KindProjector   = "0.11.0"
     val MacroParadise   = "2.1.1"
     val MTest           = "0.7.1"
-    val Nyaya           = "0.9.0"
+    val Nyaya           = "0.9.1"
     val Scala212        = "2.12.11"
     val Scala213        = "2.13.1"
     val ScalaCollCompat = "2.1.4"
