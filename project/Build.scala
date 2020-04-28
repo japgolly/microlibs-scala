@@ -2,7 +2,6 @@ import sbt._
 import Keys._
 import com.typesafe.sbt.pgp.PgpKeys
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
-import org.scalajs.sbtplugin.ScalaJSPlugin.autoImport.{crossProject => _, CrossType => _, _}
 import pl.project13.scala.sbt.JmhPlugin
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
@@ -21,14 +20,14 @@ object Microlibs {
     val JavaTimeScalaJs = "0.2.6"
     val KindProjector   = "0.11.0"
     val MacroParadise   = "2.1.1"
-    val MTest           = "0.7.1"
-    val Nyaya           = "0.9.0"
+    val MTest           = "0.7.4"
+    val Nyaya           = "0.9.2"
     val Scala212        = "2.12.11"
     val Scala213        = "2.13.1"
-    val ScalaCollCompat = "2.1.4"
+    val ScalaCollCompat = "2.1.6"
     val Scalaz          = "7.2.30"
     val SourceCode      = "0.2.1"
-    val UnivEq          = "1.2.0"
+    val UnivEq          = "1.2.1"
   }
 
   def scalacFlags = Def.setting(
