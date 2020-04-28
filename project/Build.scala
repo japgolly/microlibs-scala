@@ -66,7 +66,7 @@ object Microlibs {
   def definesMacros = ConfigureBoth(
     _.settings(
       scalacOptions += "-language:experimental.macros",
-      libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"))
+      libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided))
 
   def macroParadisePlugin =
     compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.full)
@@ -165,7 +165,7 @@ object Microlibs {
   lazy val testUtilJS  = testUtil.js
   lazy val testUtil = crossProject(JVMPlatform, JSPlatform)
     .in(file("test-util"))
-    .configureCross(commonSettings, publicationSettings)
+    .configureCross(commonSettings, publicationSettings, utestSettings)
     .settings(
       moduleName := "test-util",
       libraryDependencies ++= Seq(
