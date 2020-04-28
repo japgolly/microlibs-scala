@@ -49,3 +49,11 @@ object MonoSub {
   case object B1 extends B
   case object B2 extends B
 }
+
+object EmptySubType {
+  sealed trait A
+  sealed trait B extends A
+  sealed trait C extends A
+  case object D extends C
+  sealed abstract class E extends A
+}

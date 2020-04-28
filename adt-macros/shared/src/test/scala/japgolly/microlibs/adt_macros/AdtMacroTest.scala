@@ -41,6 +41,11 @@ object AdtMacroTest extends TestSuite {
       "s3" - assertUnorderedNEV(adtValues[MonoS3])(MonoS3.A, MonoS3.B, MonoS3.C)
       "d1" - assertFail(compileError("adtValues[MonoD1]"))
       "unsealed" - assertFail(compileError("adtValues[Unsealed]"))
+
+      "emptySubtype" - {
+        import EmptySubType._
+        assertUnorderedNEV(adtValues[A])(D)
+      }
     }
 
     "adtValuesManually" - {

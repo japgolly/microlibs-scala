@@ -156,11 +156,11 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
     if (types.isEmpty)
       fail(s"At least one concrete subtype of $T required.")
 
-    val values = types.iterator.map { cs =>
+    val values = types.iterator.filterNot(_.isAbstract).map { cs =>
       if (cs.isModuleClass)
         toSelectFQN(cs)
       else
-        fail(s"Case object expected. Found: $cs")
+        fail(s"Case object expected. Found: ${cs.fullName}")
     }.toList
 
     val impl = q"$SelectNonEmptyVector.varargs[$T](..$values)"
