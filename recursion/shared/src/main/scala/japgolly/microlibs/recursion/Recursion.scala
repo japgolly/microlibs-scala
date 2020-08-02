@@ -65,4 +65,11 @@ object Recursion {
   def chrono[F[_], A, B](coalg: CVCoalgebra[F, A], alg: CVAlgebra[F, B])(a: A)(implicit F: Functor[F]): B =
     RecursionFn.chrono(coalg, alg).apply(a)
 
+  /** See "Abstracting Definitional Interpreters". */
+  def adi[F[_], A](alg: FAlgebra[F, A], f: (Fix[F] => A) => Fix[F] => A)(ff: Fix[F])(implicit F: Functor[F]): A =
+    RecursionFn.adi(alg, f).apply(ff)
+
+  /** See "Abstracting Definitional Interpreters". */
+  def adiM[M[_], F[_], A](alg: FAlgebraM[M, F, A], f: (Fix[F] => M[A]) => Fix[F] => M[A])(ff: Fix[F])(implicit M: Monad[M], F: Traverse[F]): M[A] =
+    RecursionFn.adiM(alg, f).apply(ff)
 }

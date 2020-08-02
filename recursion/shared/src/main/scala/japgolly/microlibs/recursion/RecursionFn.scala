@@ -194,4 +194,17 @@ object RecursionFn {
           F.map(_)(as => Free(apply(as))))
     }
 
+  /** See "Abstracting Definitional Interpreters". */
+  def adi[F[_], A](alg: FAlgebra[F, A], f: (Fix[F] => A) => Fix[F] => A)(implicit F: Functor[F]): Fix[F] => A = {
+    var self: Fix[F] => A = null
+    self = f(ff => alg(F.map(ff.unfix)(self)))
+    self
+  }
+
+  /** See "Abstracting Definitional Interpreters". */
+  def adiM[M[_], F[_], A](alg: FAlgebraM[M, F, A], f: (Fix[F] => M[A]) => Fix[F] => M[A])(implicit M: Monad[M], F: Traverse[F]): Fix[F] => M[A] = {
+    var self: Fix[F] => M[A] = null
+    self = f(ff => M.bind(F.traverse(ff.unfix)(self))(alg))
+    self
+  }
 }
