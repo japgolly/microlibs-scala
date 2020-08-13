@@ -89,6 +89,12 @@ trait TestUtilWithoutUnivEq extends TestUtilImplicits {
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertMultiline(actual: String, expect: String)(implicit q: Line): Unit =
+    _assertMultiline(None, actual, expect)
+
+  def assertMultiline(name: => String, actual: String, expect: String)(implicit q: Line): Unit =
+    _assertMultiline(Some(name), actual, expect)
+
+  private def _assertMultiline(name: => Option[String], actual: String, expect: String)(implicit q: Line): Unit =
     if (actual != expect) withAtomicOutput {
       println()
       val AE = List(actual, expect).map(_.split("\n"))
@@ -97,20 +103,27 @@ trait TestUtilWithoutUnivEq extends TestUtilImplicits {
       val List(maxA,_) = AE.map(x => (0 :: x.iterator.map(_.length).toList).max)
       val maxL = lim.toString.length
       if (maxL == 0 || maxA == 0)
-        assertEq(actual, expect)
+        assertEqO(name, actual, expect)
       else {
-        println(s"${BRIGHT_YELLOW}assertMultiline:$RESET actual | expect")
-        val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxA}s | | %s${RESET}\n"
-        val fmtWS = s"${WHITE}%${maxL}d: ${RED_B}${BLACK}%-${maxA}s${RESET}${WHITE} |≈| ${GREEN_B}${BLACK}%s${RESET}\n"
-        val fmtKO = s"${WHITE}%${maxL}d: ${BOLD_BRIGHT_RED}%-${maxA}s${RESET}${WHITE} |≠| ${BOLD_BRIGHT_GREEN}%s${RESET}\n"
-        def removeWhitespace(s: String) = s.filterNot(_.isWhitespace)
-        for (i <- 0 until lim) {
-          val List(a, e) = AE.map(s => if (i >= s.length) "" else s(i))
-          val fmt =
-            if (a == e) fmtOK
-            else if (removeWhitespace(a) == removeWhitespace(e)) fmtWS
-            else fmtKO
-          printf(fmt, i + 1, a, e)
+        val nameSuffix = name.fold("")(": " + _)
+        if (as.length == es.length) {
+          println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix$RESET (actual | expect)")
+          val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxA}s | | %s${RESET}\n"
+          val fmtWS = s"${WHITE}%${maxL}d: ${RED_B}${BLACK}%-${maxA}s${RESET}${WHITE} |≈| ${GREEN_B}${BLACK}%s${RESET}\n"
+          val fmtKO = s"${WHITE}%${maxL}d: ${BOLD_BRIGHT_RED}%-${maxA}s${RESET}${WHITE} |≠| ${BOLD_BRIGHT_GREEN}%s${RESET}\n"
+          def removeWhitespace(s: String) = s.filterNot(_.isWhitespace)
+          for (i <- 0 until lim) {
+            val List(a, e) = AE.map(s => if (i >= s.length) "" else s(i))
+            val fmt =
+              if (a == e) fmtOK
+              else if (removeWhitespace(a) == removeWhitespace(e)) fmtWS
+              else fmtKO
+            printf(fmt, i + 1, a, e)
+          }
+        } else {
+          println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix$RESET")
+          println(LineDiff(expect, actual).expectActualColoured)
+          println(BRIGHT_YELLOW + ("-" * 120) + RESET)
         }
         println()
         fail("assertMultiline failed.")
