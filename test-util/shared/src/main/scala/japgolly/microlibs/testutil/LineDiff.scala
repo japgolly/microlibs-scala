@@ -2,7 +2,7 @@ package japgolly.microlibs.testutil
 
 import japgolly.microlibs.testutil.TestUtilInternals._
 import scala.collection.immutable.HashMap
-import scala.Console.RESET
+import scala.Console._
 
 /* Copyright (c) 2011, Owen Stephens
  * All rights reserved.
@@ -45,15 +45,16 @@ object LineDiff {
     def diffCustom(equalPrefix: String,
                    delPrefix  : String,
                    addPrefix  : String,
-                   reset      : String): String = {
+                   reset      : String,
+                   modLine    : String => String = identity): String = {
       val e = equalPrefix
       val d = delPrefix
       val a = addPrefix
       results.iterator.flatMap {
-        case r: Equal  => r.lines.iterator.map(e + _ + reset)
-        case r: Insert => r.lines.iterator.map(a + _ + reset)
-        case r: Delete => r.lines.iterator.map(d + _ + reset)
-        case r: Modify => r.oldLines.iterator.map(d + _ + reset) ++ r.newLines.iterator.map(a + _ + reset)
+        case r: Equal  => r.lines.iterator.map(e + modLine(_) + reset)
+        case r: Insert => r.lines.iterator.map(a + modLine(_) + reset)
+        case r: Delete => r.lines.iterator.map(d + modLine(_) + reset)
+        case r: Modify => r.oldLines.iterator.map(d + modLine(_) + reset) ++ r.newLines.iterator.map(a + modLine(_) + reset)
       }.mkString("\n")
     }
 
@@ -71,8 +72,15 @@ object LineDiff {
         delPrefix   = BOLD_BRIGHT_RED  + "-e| ",
         addPrefix   = BOLD_BRIGHT_CYAN + "+a| ",
         reset       = RESET,
+        modLine     = highlightTrailingWhitespace,
       )
   }
+
+  def highlightTrailingWhitespace(s: String): String =
+    s.reverse.takeWhile(_.isWhitespace).length match {
+      case 0 => s
+      case n => s.dropRight(n) + RED_B + s.takeRight(n)
+    }
 
   // ███████████████████████████████████████████████████████████████████████████████████████████████████████████████████
 
