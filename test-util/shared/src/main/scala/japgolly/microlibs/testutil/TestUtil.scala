@@ -368,17 +368,34 @@ trait TestUtilWithoutUnivEq extends TestUtilImplicits {
   def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
-  def assertEqWithTolerance(actual: Double, expect: Double, tolerance: Double = 0.01)(implicit l: Line): Unit = {
+  def assertEqWithTolerance(actual: Double, expect: Double)(implicit l: Line): Unit =
+    _assertEqWithTolerance(None, actual, expect)
+
+  def assertEqWithTolerance(name: => String, actual: Double, expect: Double)(implicit l: Line): Unit =
+    _assertEqWithTolerance(Some(name), actual, expect)
+
+  def assertEqWithTolerance(actual: Double, expect: Double, tolerance: Double)(implicit l: Line): Unit =
+    _assertEqWithTolerance(None, actual, expect, tolerance)
+
+  def assertEqWithTolerance(name: => String, actual: Double, expect: Double, tolerance: Double)(implicit l: Line): Unit =
+    _assertEqWithTolerance(Some(name), actual, expect, tolerance)
+
+  private def _assertEqWithTolerance(_name: => Option[String], actual: Double, expect: Double, tolerance: Double = 0.001)(implicit l: Line): Unit = {
     val d = Math.abs(actual - expect)
-    if (d > tolerance)
-      fail(
+    if (d > tolerance) {
+      val name = _name
+      val titleSuffix = name.fold("")(n => s" ${BOLD_BRIGHT_YELLOW}$n$RESET")
+      val errorPrefix = name.fold("")(n => s"[$n] ")
+      println(
         s"""
-           |assertEqWithTolerance failed.
-           |actual: $actual
-           |expect: $expect
-           | delta: $d
-           |   tol: $tolerance
+           |${YELLOW_B}${BLACK}assertEqWithTolerance failed:$RESET$titleSuffix
+           |${BOLD_BRIGHT_GREEN}expect: $expect$RESET
+           |${BOLD_BRIGHT_RED}actual: $actual$RESET
+           |${BOLD_BRIGHT_RED} delta: $d$RESET
+           |$YELLOW   tol: $tolerance$RESET
            |""".stripMargin)
+      fail(s"$errorPrefix$actual ≠ $expect by $d which exceeds tolerance of $tolerance")
+    }
   }
 
 }
