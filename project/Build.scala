@@ -24,7 +24,7 @@ object Microlibs {
     val Nyaya           = "0.9.2"
     val Scala212        = "2.12.11"
     val Scala213        = "2.13.3"
-    val ScalaCollCompat = "2.1.6"
+    val ScalaCollCompat = "2.3.2"
     val Scalaz          = "7.2.30"
     val SourceCode      = "0.2.1"
     val UnivEq          = "1.2.1"
