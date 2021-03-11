@@ -157,7 +157,7 @@ object RecursionFn {
   /** hylo of futu into histo */
   def chrono[F[_], A, B](coalg: CVCoalgebra[F, A], alg: CVAlgebra[F, B])(implicit F: Functor[F]): A => B =
     // histo(alg)(futu(coalg)(a)) // Naive
-    ghylo[Cofree[F, ?], F, Free[F, ?], A, B](distHisto[F], distFutu[F], alg, coalg)
+    ghylo[Cofree[F, *], F, Free[F, *], A, B](distHisto[F], distFutu[F], alg, coalg)
 
   private type Coseq[F[_], G[_]] = Lambda[A => F[G[A]]] ~> Lambda[A => G[F[A]]]
 
@@ -179,15 +179,15 @@ object RecursionFn {
     a => W.copoint(h(M.point(a)))
   }
 
-  private def distHisto[F[_]](implicit F: Functor[F]): Coseq[F, Cofree[F, ?]] =
-    new Coseq[F, Cofree[F, ?]] {
+  private def distHisto[F[_]](implicit F: Functor[F]): Coseq[F, Cofree[F, *]] =
+    new Coseq[F, Cofree[F, *]] {
       override def apply[A](f: F[Cofree[F, A]]): Cofree[F, F[A]] =
         Cofree.unfold[F, F[A], F[Cofree[F, A]]](f)(as =>
           (F.map(as)(_.head), F.map(as)(_.tail)))
     }
 
-  private def distFutu[F[_]](implicit F: Functor[F]): Coseq[Free[F, ?], F] =
-    new Coseq[Free[F, ?], F] {
+  private def distFutu[F[_]](implicit F: Functor[F]): Coseq[Free[F, *], F] =
+    new Coseq[Free[F, *], F] {
       override def apply[A](f: Free[F, F[A]]): F[Free[F, A]] =
         f.fold(
           F.map(_)(Free.pure),

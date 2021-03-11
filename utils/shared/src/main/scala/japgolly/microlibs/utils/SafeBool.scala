@@ -3,6 +3,7 @@ package japgolly.microlibs.utils
 import japgolly.univeq.UnivEq
 import scala.collection.compat._
 import SafeBool._
+import scala.annotation.nowarn
 
 /** Boolean isomorphism.
   *
@@ -169,6 +170,7 @@ object SafeBool {
   }
 
   object Values {
+    @nowarn("cat=unused")
     implicit def univEq[B <: SafeBool[B], A: UnivEq]: UnivEq[Values[B, A]] =
       UnivEq.derive
   }

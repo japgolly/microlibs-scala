@@ -3,6 +3,7 @@ package japgolly.microlibs.utils
 import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.univeq.UnivEq
 import scala.reflect.ClassTag
+import scala.annotation.nowarn
 
 /** Fast, efficient lookup functions for static data.
   *
@@ -62,6 +63,7 @@ object StaticLookupFn {
 
   // ===================================================================================================================
 
+  @nowarn("cat=unused")
   def useMap[K: UnivEq, V](kvs: Iterable[(K, V)]): Dsl[K, V] =
     if (kvs.isEmpty)
       Dsl.empty

@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import com.typesafe.sbt.pgp.PgpKeys._
+import com.jsuereth.sbtpgp.PgpKeys._
 import org.scalajs.sbtplugin.ScalaJSPlugin._
 import sbtcrossproject.CrossProject
 import sbtcrossproject.CrossPlugin.autoImport._
@@ -64,6 +64,7 @@ object Lib {
 
   def preventPublication: PE =
     _.settings(
+      skip in publish    := true,
       publish            := (()),
       publishLocal       := (()),
       publishSigned      := (()),

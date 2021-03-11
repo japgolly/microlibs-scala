@@ -3,6 +3,7 @@ package japgolly.microlibs.utils
 import japgolly.univeq.UnivEq
 import scala.collection.compat._
 import scala.collection.immutable.IntMap
+import scala.annotation.nowarn
 
 /**
  * Bidirectional maps between values of two key types.
@@ -49,6 +50,7 @@ object BiMap {
   implicit def univEq[A, B]: UnivEq[BiMap[A, B]] =
     UnivEq.force
 
+  @nowarn("cat=unused")
   def force[A: UnivEq, B: UnivEq](forward: Map[A, B])(backward: Map[B, A]): BiMap[A, B] =
     new BiMap(forward, backward)
 
@@ -77,6 +79,7 @@ object BiMap {
 
   // ===================================================================================================================
 
+  @nowarn("cat=unused")
   abstract class AbstractBuilder[A: UnivEq, @specialized(Int) B: UnivEq] {
     protected def updateAB(a: A, b: B): Unit
     protected def updateBA(b: B, a: A): Unit

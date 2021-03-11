@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import com.typesafe.sbt.pgp.PgpKeys
+import com.jsuereth.sbtpgp.PgpKeys
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import pl.project13.scala.sbt.JmhPlugin
 import sbtcrossproject.CrossPlugin.autoImport._
@@ -18,16 +18,16 @@ object Microlibs {
   object Ver {
     val JAMM            = "0.3.3"
     val JavaTimeScalaJs = "1.0.0"
-    val KindProjector   = "0.11.0"
+    val KindProjector   = "0.11.3"
     val MacroParadise   = "2.1.1"
-    val MTest           = "0.7.4"
-    val Nyaya           = "0.9.2"
-    val Scala212        = "2.12.11"
-    val Scala213        = "2.13.3"
-    val ScalaCollCompat = "2.1.6"
-    val Scalaz          = "7.2.30"
-    val SourceCode      = "0.2.1"
-    val UnivEq          = "1.2.1"
+    val MTest           = "0.7.7"
+    val Nyaya           = "0.10.0-RC1"
+    val Scala212        = "2.12.13"
+    val Scala213        = "2.13.5"
+    val ScalaCollCompat = "2.4.2"
+    val Scalaz          = "7.2.31"
+    val SourceCode      = "0.2.4"
+    val UnivEq          = "1.3.0"
   }
 
   def scalacFlags = Def.setting(

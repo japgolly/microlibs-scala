@@ -2,6 +2,7 @@ package japgolly.microlibs.nonempty
 
 import japgolly.univeq.UnivEq
 import scalaz.Equal
+import scala.annotation.nowarn
 
 /**
  * Type indicating that its value has been proven to be non-empty.
@@ -22,6 +23,7 @@ object NonEmpty {
    * scala> new X(3) == new X(3)
    * res0: Boolean = true
    */
+  @nowarn("cat=unused")
   @inline implicit def nonEmptyUnivEq[A: UnivEq]: UnivEq[NonEmpty[A]] =
     UnivEq.force
 
