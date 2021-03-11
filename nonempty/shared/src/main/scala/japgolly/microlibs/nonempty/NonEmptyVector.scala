@@ -7,6 +7,7 @@ import scala.collection.immutable.Range
 import scala.math.Ordering
 import scalaz._
 import scalaz.std.vector.{vectorEqual, vectorOrder}
+import scala.annotation.nowarn
 
 final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   override def toString = "NonEmpty" + whole.toString
@@ -296,6 +297,7 @@ object NonEmptyVector extends NonEmptyVectorImplicits0 {
       NonEmptyVector(head, tail.result())
   }
 
+  @nowarn("cat=unused")
   implicit def univEq[A: UnivEq]: UnivEq[NonEmptyVector[A]] =
     UnivEq.force
 

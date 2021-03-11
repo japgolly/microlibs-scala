@@ -28,7 +28,7 @@ object MathExpr {
       }
     }
 
-  val add10 = Lambda[MathExpr[?] ~> MathExpr[?]] {
+  val add10 = Lambda[MathExpr[*] ~> MathExpr[*]] {
     case MathExpr.Num(n) => MathExpr.Num(n + 10)
     case e@ MathExpr.Add(_, _) => e
   }

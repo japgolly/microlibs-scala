@@ -1,6 +1,6 @@
 import sbt._
 import Keys._
-import com.typesafe.sbt.pgp.PgpKeys
+import com.jsuereth.sbtpgp.PgpKeys
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import pl.project13.scala.sbt.JmhPlugin
 import sbtcrossproject.CrossPlugin.autoImport._
@@ -9,26 +9,12 @@ import sbtrelease.ReleasePlugin.autoImport._
 import Lib._
 
 object Microlibs {
+  import Dependencies._
 
   private val ghProject = "microlibs-scala"
 
   private val publicationSettings =
     Lib.publicationSettings(ghProject)
-
-  object Ver {
-    val JAMM            = "0.3.3"
-    val JavaTimeScalaJs = "1.0.0"
-    val KindProjector   = "0.11.0"
-    val MacroParadise   = "2.1.1"
-    val MTest           = "0.7.4"
-    val Nyaya           = "0.9.2"
-    val Scala212        = "2.12.11"
-    val Scala213        = "2.13.3"
-    val ScalaCollCompat = "2.1.6"
-    val Scalaz          = "7.2.30"
-    val SourceCode      = "0.2.1"
-    val UnivEq          = "1.2.1"
-  }
 
   def scalacFlags = Def.setting(
     Seq(
@@ -61,19 +47,16 @@ object Microlibs {
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(version in ThisBuild).value}",
       releaseVcsSign                := true,
-      addCompilerPlugin("org.typelevel" %% "kind-projector" % Ver.KindProjector cross CrossVersion.full)))
+      libraryDependencies           += Dep.KindProjector))
 
   def definesMacros = ConfigureBoth(
     _.settings(
       scalacOptions += "-language:experimental.macros",
-      libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided))
-
-  def macroParadisePlugin =
-    compilerPlugin("org.scalamacros" % "paradise" % Ver.MacroParadise cross CrossVersion.full)
+      libraryDependencies += Dep.ScalaCompiler.value % Provided))
 
   def utestSettings = ConfigureBoth(
     _.settings(
-      libraryDependencies += "com.lihaoyi" %%% "utest" % Ver.MTest % Test,
+      libraryDependencies += Dep.MTest.value % Test,
       testFrameworks      += new TestFramework("utest.runner.Framework")))
 
   def useTestUtil: CPE =
@@ -116,7 +99,7 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
     .settings(
       moduleName := "macro-utils",
-      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.ScalaCollCompat)
+      libraryDependencies += Dep.ScalaCollCompat.value)
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js
@@ -131,15 +114,15 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, utestSettings)
     .settings(
       libraryDependencies ++= Seq(
-        "org.scalaz"                 %%% "scalaz-core"             % Ver.Scalaz,
-        "com.github.japgolly.univeq" %%% "univeq-scalaz"           % Ver.UnivEq,
-        "org.scala-lang.modules"     %%% "scala-collection-compat" % Ver.ScalaCollCompat))
+        Dep.Scalaz         .value,
+        Dep.UnivEqScalaz   .value,
+        Dep.ScalaCollCompat.value))
 
   lazy val recursionJVM = recursion.jvm
   lazy val recursionJS  = recursion.js
   lazy val recursion = crossProject(JVMPlatform, JSPlatform)
     .configureCross(commonSettings, publicationSettings, utestSettings)
-    .settings(libraryDependencies += "org.scalaz" %%% "scalaz-core" % Ver.Scalaz)
+    .settings(libraryDependencies += Dep.Scalaz.value)
 
   lazy val scalazExtJVM = scalazExt.jvm
   lazy val scalazExtJS  = scalazExt.js
@@ -149,7 +132,7 @@ object Microlibs {
     .dependsOn(macroUtils)
     .settings(
       moduleName := "scalaz-ext",
-      libraryDependencies += "org.scalaz" %%% "scalaz-core" % Ver.Scalaz)
+      libraryDependencies += Dep.Scalaz.value)
 
   lazy val stdlibExtJVM = stdlibExt.jvm
   lazy val stdlibExtJS  = stdlibExt.js
@@ -158,8 +141,8 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, utestSettings, useTestUtil)
     .settings(
       moduleName := "stdlib-ext",
-      libraryDependencies += "org.scala-lang.modules" %%% "scala-collection-compat" % Ver.ScalaCollCompat)
-    .jsSettings(libraryDependencies += "org.scala-js" %%% "scalajs-java-time" % Ver.JavaTimeScalaJs % Test)
+      libraryDependencies += Dep.ScalaCollCompat.value)
+    .jsSettings(libraryDependencies += Dep.ScalaJsJavaTime.value % Test)
 
   lazy val testUtilJVM = testUtil.jvm
   lazy val testUtilJS  = testUtil.js
@@ -169,10 +152,10 @@ object Microlibs {
     .settings(
       moduleName := "test-util",
       libraryDependencies ++= Seq(
-        "com.github.japgolly.univeq" %%% "univeq" % Ver.UnivEq,
-        "com.github.japgolly.univeq" %%% "univeq-scalaz" % Ver.UnivEq,
-        "org.scalaz" %%% "scalaz-core" % Ver.Scalaz,
-        "com.lihaoyi" %%% "sourcecode" % Ver.SourceCode))
+        Dep.UnivEq      .value,
+        Dep.UnivEqScalaz.value,
+        Dep.Scalaz      .value,
+        Dep.SourceCode  .value))
 
   lazy val utilsJVM = utils.jvm
   lazy val utilsJS  = utils.js
@@ -181,10 +164,10 @@ object Microlibs {
     .dependsOn(stdlibExt)
     .settings(
       libraryDependencies ++= Seq(
-        "com.github.japgolly.univeq" %%% "univeq" % Ver.UnivEq,
-        "com.github.japgolly.nyaya" %%% "nyaya-gen" % Ver.Nyaya % Test,
-        "com.github.japgolly.nyaya" %%% "nyaya-prop" % Ver.Nyaya % Test,
-        "com.github.japgolly.nyaya" %%% "nyaya-test" % Ver.Nyaya % Test))
+        Dep.UnivEq   .value,
+        Dep.NyayaGen .value % Test,
+        Dep.NyayaProp.value % Test,
+        Dep.NyayaTest.value % Test))
 
   // ===================================================================================================================
 
@@ -194,7 +177,7 @@ object Microlibs {
     .configure(commonSettings.jvm, preventPublication)
     .settings(
       name := "bench",
-      libraryDependencies += "com.github.jbellis" % "jamm" % Ver.JAMM,
+      libraryDependencies += Dep.JAMM.value,
       fork := true,
       javaOptions ++= Seq("-server", "-Xss8M"),
 

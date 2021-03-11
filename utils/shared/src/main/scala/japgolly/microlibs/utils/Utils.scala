@@ -4,9 +4,11 @@ import japgolly.microlibs.stdlib_ext.StdlibExt._
 import japgolly.univeq.UnivEq
 import java.time.{Duration, Instant}
 import scala.collection.compat._
+import scala.annotation.nowarn
 
 object Utils {
 
+  @nowarn("cat=unused")
   def dups[A: UnivEq](as: IterableOnce[A]): Iterator[A] = {
     val seen = collection.mutable.HashSet.empty[A]
     as.iterator.map { a =>

@@ -29,7 +29,7 @@ object RecursionTest extends TestSuite {
       "stopAboveFive" - {
         val l = 1 to 10 toList
         val t = FixList(l: _*)
-        val a = Recursion.prepro[ListF[Int, ?], Int](FixList.stopAboveFive, FixList.sum)(t)
+        val a = Recursion.prepro[ListF[Int, *], Int](FixList.stopAboveFive, FixList.sum)(t)
         val expect = l.takeWhile(_ <= 5).sum
         assert(a == expect)
       }
@@ -37,7 +37,7 @@ object RecursionTest extends TestSuite {
       "zeroOutOdds" - {
         val l = 1 to 10 toList
         val t = FixList(l: _*)
-        val a = Recursion.prepro[ListF[Int, ?], Int](FixList.zeroOutOdds, FixList.sum)(t)
+        val a = Recursion.prepro[ListF[Int, *], Int](FixList.zeroOutOdds, FixList.sum)(t)
         // l.head because prepro doesn't transform it's input, only children
         val expect = l.head + l.tail.filter(_ % 2 == 0).sum
         assert(a == expect)
@@ -47,14 +47,14 @@ object RecursionTest extends TestSuite {
     "postpro" - {
       "stopAboveFive" - {
         val i = -3
-        val a = Recursion.postpro[ListF[Int, ?], Int](FixList.ascStream, FixList.stopAboveFive)(i)
+        val a = Recursion.postpro[ListF[Int, *], Int](FixList.ascStream, FixList.stopAboveFive)(i)
         val expect = (-3 to 5).toList
         assert(a == FixList(expect: _*))
       }
 
       "zeroOutOdds" - {
         val i = 93
-        val a = Recursion.postpro[ListF[Int, ?], Int](FixList.ascStream, FixList.zeroOutOdds)(i)
+        val a = Recursion.postpro[ListF[Int, *], Int](FixList.ascStream, FixList.zeroOutOdds)(i)
         val aa = FixList.toList(a)
         val expect = List(93, 94, 0, 96, 0, 98, 0, 100)
         assert(aa == expect)

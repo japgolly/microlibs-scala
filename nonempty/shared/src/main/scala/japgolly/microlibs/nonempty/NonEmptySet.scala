@@ -3,6 +3,7 @@ package japgolly.microlibs.nonempty
 import japgolly.univeq.UnivEq
 import scala.collection.compat._
 import scalaz.Semigroup
+import scala.annotation.nowarn
 
 /**
  * @param tail Does NOT contain head.
@@ -34,6 +35,7 @@ final class NonEmptySet[A] private[nonempty] (val head: A, val tail: Set[A]) {
   def map[B: UnivEq](f: A => B): NonEmptySet[B] =
     NonEmptySet(f(head), tail map f)
 
+  @nowarn("cat=unused")
   def flatMap[B: UnivEq](f: A => NonEmptySet[B]): NonEmptySet[B] =
     reduceMapLeft1(f)(_ ++ _)
 
@@ -96,12 +98,15 @@ final class NonEmptySet[A] private[nonempty] (val head: A, val tail: Set[A]) {
 // =====================================================================================================================
 
 object NonEmptySet {
+
+  @nowarn("cat=unused")
   def one[A: UnivEq](h: A): NonEmptySet[A] =
     new NonEmptySet(h, Set.empty)
 
   def apply[A: UnivEq](h: A, t: A*): NonEmptySet[A] =
     apply(h, t.toSet)
 
+  @nowarn("cat=unused")
   def apply[A: UnivEq](h: A, t: Set[A]): NonEmptySet[A] =
     new NonEmptySet(h, t - h)
 
@@ -124,6 +129,7 @@ object NonEmptySet {
   def unwrapOption[A](o: Option[NonEmptySet[A]]): Set[A] =
     o.fold(Set.empty[A])(_.whole)
 
+  @nowarn("cat=unused")
   implicit def univEq[A: UnivEq]: UnivEq[NonEmptySet[A]] =
     UnivEq.force
 
