@@ -8,12 +8,6 @@ import japgolly.univeq.UnivEq
 
 object AdtMacroTest extends TestSuite {
 
-  /*
-  def adtIso[Adt, T](f: Adt => T): AdtIso[Adt, T] = macro AdtMacros.quietAdtIso[Adt, T]
-  def valuesForAdt[T, V](f: T => V): NonEmptyVector[V] = macro AdtMacros.quietValuesForAdt[T, V]
-  def valuesForAdtF[T, V](f: T => V): (NonEmptyVector[V], T => V) = macro AdtMacros.quietValuesForAdtF[T, V]
-   */
-
   def assertOrderedNEV[A](actual: NonEmptyVector[A], expect: NonEmptyVector[A]): Unit =
     assert(actual == expect)
 

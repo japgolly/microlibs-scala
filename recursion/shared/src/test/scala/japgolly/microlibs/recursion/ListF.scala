@@ -34,14 +34,18 @@ object FixList {
     case h :: t => ConsF(h, t)
   }
 
-  val zeroOutOdds = Lambda[ListF[Int, *] ~> ListF[Int, *]] {
-    case ConsF(n, t) if n % 2 == 1 => ConsF(0, t)
-    case e => e
+  val zeroOutOdds = new (ListF[Int, *] ~> ListF[Int, *]) {
+    override def apply[A](fa: ListF[Int, A]) = fa match {
+      case ConsF(n, t) if n % 2 == 1 => ConsF(0, t)
+      case e => e
+    }
   }
 
-  val stopAboveFive = Lambda[ListF[Int, *] ~> ListF[Int, *]] {
-    case ConsF(n, _) if n > 5 => NilF
-    case e => e
+  val stopAboveFive = new (ListF[Int, *] ~> ListF[Int, *]) {
+    override def apply[A](fa: ListF[Int, A]) = fa match {
+      case ConsF(n, _) if n > 5 => NilF
+      case e => e
+    }
   }
 
   val sum: FAlgebra[ListF[Int, *], Int] = {

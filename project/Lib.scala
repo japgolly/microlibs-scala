@@ -1,6 +1,7 @@
 import sbt._
 import Keys._
 import com.jsuereth.sbtpgp.PgpKeys._
+import dotty.tools.sbtplugin.DottyPlugin.autoImport._
 import org.scalajs.sbtplugin.ScalaJSPlugin._
 import sbtcrossproject.CrossProject
 import sbtcrossproject.CrossPlugin.autoImport._
@@ -53,13 +54,24 @@ object Lib {
     .jsConfigure(
       sourceMapsToGithub(ghProject))
 
+  def byScalaVersion[A](f: PartialFunction[(Long, Long), Seq[A]]): Def.Initialize[Seq[A]] =
+    Def.setting(CrossVersion.partialVersion(scalaVersion.value).flatMap(f.lift).getOrElse(Nil))
+
   def sourceMapsToGithub(ghProject: String): PE =
     p => p.settings(
-      scalacOptions ++= (if (isSnapshot.value) Seq.empty else Seq({
-        val a = p.base.toURI.toString.replaceFirst("[^/]+/?$", "")
-        val g = s"https://raw.githubusercontent.com/japgolly/$ghProject"
-        s"-P:scalajs:mapSourceURI:$a->$g/v${version.value}/"
-      }))
+      scalacOptions ++= {
+        val _isDotty    = isDotty.value
+        val _isSnapshot = isSnapshot.value
+        val ver         = version.value
+        if (_isSnapshot)
+          Nil
+        else {
+          val a = p.base.toURI.toString.replaceFirst("[^/]+/?$", "")
+          val g = s"https://raw.githubusercontent.com/japgolly/$ghProject"
+          val flag = if (_isDotty) "-scalajs-mapSourceURI" else "-P:scalajs:mapSourceURI"
+          s"$flag:$a->$g/v$ver/" :: Nil
+        }
+      }
     )
 
   def preventPublication: PE =
@@ -73,4 +85,22 @@ object Lib {
       publishTo          := Some(Resolver.file("Unused transient repository", target.value / "fakepublish")),
       packagedArtifacts  := Map.empty)
     // .disablePlugins(plugins.IvyPlugin)
+
+  private def extraCrossProjectScalaDirs(k: ConfigKey): Def.Initialize[Seq[File]] = Def.setting {
+    val srcBase = (sourceDirectory in k).value
+    val stage   = srcBase.getName()
+    val shared  = srcBase.getParentFile().getParentFile().getParentFile() / "shared" / "src" / stage
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, _))  => Seq(shared / "scala-2")
+      case Some((3, _))  => Seq(shared / "scala-3")
+      case _             => Nil
+    }
+  }
+
+  def crossProjectScalaDirs: CPE =
+    _.settings(
+      unmanagedSourceDirectories in Compile ++= extraCrossProjectScalaDirs(Compile).value,
+      unmanagedSourceDirectories in Test    ++= extraCrossProjectScalaDirs(Test).value,
+    )
+
 }

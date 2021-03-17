@@ -28,9 +28,11 @@ object MathExpr {
       }
     }
 
-  val add10 = Lambda[MathExpr[*] ~> MathExpr[*]] {
-    case MathExpr.Num(n) => MathExpr.Num(n + 10)
-    case e@ MathExpr.Add(_, _) => e
+  val add10 = new (MathExpr ~> MathExpr) {
+    override def apply[A](fa: MathExpr[A]) = fa match {
+      case MathExpr.Num(n) => MathExpr.Num(n + 10)
+      case e@ MathExpr.Add(_, _) => e
+    }
   }
 
   object Helpers {

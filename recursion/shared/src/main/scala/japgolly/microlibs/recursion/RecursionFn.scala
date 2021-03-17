@@ -159,7 +159,7 @@ object RecursionFn {
     // histo(alg)(futu(coalg)(a)) // Naive
     ghylo[Cofree[F, *], F, Free[F, *], A, B](distHisto[F], distFutu[F], alg, coalg)
 
-  private type Coseq[F[_], G[_]] = Lambda[A => F[G[A]]] ~> Lambda[A => G[F[A]]]
+  import ScalaVerSpecific.Coseq
 
   private def ghylo[W[_], F[_], M[_], A, B](w: Coseq[F, W],
                                             m: Coseq[M, F],
