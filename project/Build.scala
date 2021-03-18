@@ -37,7 +37,7 @@ object Microlibs {
   )
 
   def scalac3Flags = Seq(
-    "-source", "3.0-migration",
+    "-source:3.0-migration",
     "-Ykind-projector",
   )
 
@@ -115,6 +115,7 @@ object Microlibs {
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
     .settings(
       moduleName := "macro-utils",
+      scalacOptions --= Seq("-source:3.0-migration"),
       libraryDependencies += Dep.ScalaCollCompat.value)
 
   lazy val nameFnJVM = nameFn.jvm
@@ -148,6 +149,7 @@ object Microlibs {
     .dependsOn(macroUtils)
     .settings(
       moduleName := "scalaz-ext",
+      scalacOptions --= Seq("-source:3.0-migration"),
       libraryDependencies += Dep.Scalaz.value)
 
   lazy val stdlibExtJVM = stdlibExt.jvm
