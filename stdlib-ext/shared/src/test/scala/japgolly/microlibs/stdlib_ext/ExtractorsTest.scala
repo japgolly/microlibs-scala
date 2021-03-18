@@ -4,6 +4,9 @@ import japgolly.microlibs.testutil.TestUtil._
 import java.time.Duration
 import utest._
 
+val x = japgolly.microlibs.testutil.TestUtil.scalazEqualFromUnivEq[Int]
+val y = scalazEqualFromUnivEq[Int]
+
 object ExtractorsTest extends TestSuite {
 
   override def tests = Tests {
