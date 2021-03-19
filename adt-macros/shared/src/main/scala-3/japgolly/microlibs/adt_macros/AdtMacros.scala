@@ -168,59 +168,49 @@ object AdtMacros:
     if debug then println(s"\n${result.show}\n")
     result
 
-  // private inline def adtIsoSetImpl[Adt: UnivEq, A: UnivEq](inline f: Adt => A): AdtIsoSet[Adt, A] =
-  //   val (from,to,adtVec,toVec) = adtIso(f)
-  //   val adtSet = adtVec.toNES[Adt]
-  //   val toSet = toVec.toNES[A]
-  //   assert(adtSet.forall(a => to(from(a)) == a))
-  //   (from, to, adtSet, toSet)
+  // ===================================================================================================================
+
+  inline def  valuesForAdt[Adt, A](inline f: Adt => A): NonEmptyVector[A] =
+    ${ valuesForAdtImpl[Adt, A]('f, false) }
+
+  inline def  _valuesForAdt[Adt, A](inline f: Adt => A): NonEmptyVector[A] =
+    ${ valuesForAdtImpl[Adt, A]('f, true) }
+
+  private def valuesForAdtImpl[Adt: Type, A: Type](trans: Expr[Adt => A], debug: Boolean)(using Quotes): Expr[NonEmptyVector[A]] =
+    MacroUtils.withNonEmptySumTypeTypes(Type.of[Adt])([types] => (_: Type[types]) ?=> {
+      import quotes.reflect.*
+
+      val valueFn = MacroUtils.extractInlineAdtMappingFn(trans)
+      val values  = valueFn.map(_._2)
+      val types   = MacroUtils.setOfFieldTypes[types]
+
+      var unseen = types.toSet
+      for ((_case, ind) <- valueFn.iterator.map(_._1).zipWithIndex) {
+        val _type = _case.fold(_.tpe, _.tpe)
+        val matches = unseen.filter(_ <:< _type)
+        if (matches.isEmpty)
+          fail(s"Case ${ind + 1} (${_type}) doesn't match any remaining cases (${MacroUtils.showUnorderedTypes(unseen)}).")
+        else
+          unseen --= matches
+      }
+      if (unseen.nonEmpty)
+        fail(s"The following types are unaccounted for: ${MacroUtils.showUnorderedTypes(unseen)}")
+
+      val result = nonEmptyVector[A](values.map(_.asExprOf[A]))
+      if debug then println(s"\n${result.show}\n")
+      result
+    })
 
   // ===================================================================================================================
 
-//   def valuesForAdt[T, V](f: T => V): NonEmptyVector[V] = macro AdtMacros.quietValuesForAdt[T, V]
-//   def _valuesForAdt[T, V](f: T => V): NonEmptyVector[V] = macro AdtMacros.debugValuesForAdt[T, V]
+  inline def valuesForAdtF[Adt, A](inline f: Adt => A): (NonEmptyVector[A], Adt => A) =
+    ${ valuesForAdtFImpl[Adt, A]('f, false) }
 
-//   def quietValuesForAdt[T: c.WeakTypeTag, V: c.WeakTypeTag](f: c.Expr[T => V]): c.Expr[NonEmptyVector[V]] = implValuesForAdt(false)(f)
-//   def debugValuesForAdt[T: c.WeakTypeTag, V: c.WeakTypeTag](f: c.Expr[T => V]): c.Expr[NonEmptyVector[V]] = implValuesForAdt(true)(f)
-//   def implValuesForAdt[T: c.WeakTypeTag, V: c.WeakTypeTag](debug: Boolean)(f: c.Expr[T => V]): c.Expr[NonEmptyVector[V]] = {
-//     val T       = weakTypeOf[T]
-//     val V       = weakTypeOf[V]
-//     val valueFn = readMacroArg_tToTree(f)
-//     val values  = valueFn.map(_._2)
+  inline def _valuesForAdtF[Adt, A](inline f: Adt => A): (NonEmptyVector[A], Adt => A) =
+    ${ valuesForAdtFImpl[Adt, A]('f, true) }
 
-//     val types = findConcreteAdtTypesNE(T, LeavesOnly)
-//     if (types.isEmpty)
-//       fail(s"At least one concrete subtype of $T required.")
-
-//     var unseen = types.toSet
-//     for ((_case, ind) <- valueFn.iterator.map(_._1).zipWithIndex) {
-//       val _type = _case.fold(_.tpe, identity)
-//       val matches = unseen.filter(_ <:< _type)
-//       if (matches.isEmpty)
-//         fail(s"Case ${ind + 1} (${_type}) doesn't match any remaining cases (${showUnorderedTypes(unseen)}).")
-//       else
-//         unseen --= matches
-//     }
-//     if (unseen.nonEmpty)
-//       fail(s"The following types are unaccounted for: ${showUnorderedTypes(unseen)}")
-
-//     val impl = q"$SelectNonEmptyVector.varargs[$V](..$values)"
-
-//     if (debug) println("\n" + showCode(impl) + "\n")
-//     c.Expr[NonEmptyVector[V]](impl)
-//   }
-
-  // ===================================================================================================================
-
-//   def valuesForAdtF[T, V](f: T => V): (NonEmptyVector[V], T => V) = macro AdtMacros.quietValuesForAdtF[T, V]
-//   def _valuesForAdtF[T, V](f: T => V): (NonEmptyVector[V], T => V) = macro AdtMacros.debugValuesForAdtF[T, V]
-
-//   def quietValuesForAdtF[T: c.WeakTypeTag, V: c.WeakTypeTag](f: c.Expr[T => V]): c.Expr[(NonEmptyVector[V], T => V)] = implValuesForAdtF(false)(f)
-//   def debugValuesForAdtF[T: c.WeakTypeTag, V: c.WeakTypeTag](f: c.Expr[T => V]): c.Expr[(NonEmptyVector[V], T => V)] = implValuesForAdtF(true)(f)
-//   def implValuesForAdtF[T: c.WeakTypeTag, V: c.WeakTypeTag](debug: Boolean)(f: c.Expr[T => V]): c.Expr[(NonEmptyVector[V], T => V)] = {
-//     val nev = implValuesForAdt[T, V](false)(f)
-//     val impl = q"($nev, $f)"
-//     if (debug) println("\n" + showCode(impl) + "\n")
-//     c.Expr[(NonEmptyVector[V], T => V)](impl)
-//   }
-// }
+  private def valuesForAdtFImpl[Adt: Type, A: Type](f: Expr[Adt => A], debug: Boolean)(using Quotes): Expr[(NonEmptyVector[A], Adt => A)] =
+    val nev = valuesForAdtImpl[Adt, A](f, debug = false)
+    val result = '{ ($nev, $f) }
+    if debug then println(s"\n${result.show}\n")
+    result

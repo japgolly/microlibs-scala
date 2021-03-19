@@ -29,6 +29,12 @@ object MacroUtils:
           case x => fail(s"Expected a constant literal, got: ${x.show} ")
         }
 
+      def simplify: q.reflect.Term =
+        import q.reflect.*
+        self match
+        case Block(_, t) => t
+        case _           => self
+
   end Ops
   import Ops._
 
@@ -263,24 +269,24 @@ object MacroUtils:
           fail(s"Don't know how to extract cases from:\n  ${e.show}\nStuck on tree:\n  $tree")
     go(e.asTerm)
 
-  // Ident    = `case Object`
+  // Ref      = `case Object`
   // TypeTree = `case _: Class`
   def extractInlineAdtMappingFn[T, V](e: Expr[T => V])(using q: Quotes)
-      : List[(Either[q.reflect.Ident, q.reflect.TypeTree], q.reflect.Term)] =
+      : List[(Either[q.reflect.Ref, q.reflect.TypeTree], q.reflect.Term)] =
     import quotes.reflect.*
     // logAll("CaseDefs", extractCaseDefs(e))(identity)
     extractCaseDefs(e).map {
 
       // case Object => "k"
-      case CaseDef(i: Ident, _, Block(Nil, body)) =>
-        (Left(i), body)
+      case CaseDef(r: Ref, _, body) =>
+        (Left(r), body.simplify)
 
       // case _: Class => "k"
-      case CaseDef(Typed(_, tt: TypeTree), _, Block(Nil, body)) =>
-        (Right(tt), body)
+      case CaseDef(Typed(_, tt: TypeTree), _, body) =>
+        (Right(tt), body.simplify)
 
       case x =>
-        fail(s"Expecting a case like: {case _: Type => ?}\n  Got: $x")
+        fail(s"Expecting a case like: {case _: Type => ?}\n  Got: $x\n  In: ${e.show}")
     }
 
   def anonymousMatch[A: Type, B: Type](using q: Quotes)(cases: Seq[q.reflect.CaseDef]): Expr[A => B] =
@@ -289,3 +295,5 @@ object MacroUtils:
       Match(a.asTerm, cases.toList).asExprOf[B]
     '{ (a: A) => ${matchOn('a)} }
 
+  def showUnorderedTypes(using q: Quotes)(ts: Set[q.reflect.TypeRepr]): String =
+    ts.toList.map(_.toString).sorted.mkString(", ")
