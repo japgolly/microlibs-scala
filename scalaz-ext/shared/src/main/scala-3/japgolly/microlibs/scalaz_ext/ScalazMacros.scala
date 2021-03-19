@@ -7,7 +7,7 @@ import scala.quoted.*
 import scalaz.Equal
 import MacroUtils.Ops._
 
-object ScalazMacros {
+object ScalazMacros:
 
   inline def deriveEqual[A]: Equal[A] =
     ${ deriveEqualImpl[A](false) }
@@ -15,7 +15,7 @@ object ScalazMacros {
   inline def _deriveEqual[A]: Equal[A] =
     ${ deriveEqualImpl[A](true) }
 
-  private def deriveEqualImpl[A](debug: Boolean)(using Quotes, Type[A]): Expr[Equal[A]] = {
+  private def deriveEqualImpl[A](debug: Boolean)(using Quotes, Type[A]): Expr[Equal[A]] =
     var result: Expr[Equal[A]] = null
     def log(msg: => Any) = if debug then println(msg)
     log("="*120)
@@ -70,5 +70,3 @@ object ScalazMacros {
       log(result.show)
       log("="*120)
       result
-  }
-}

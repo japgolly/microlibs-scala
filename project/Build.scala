@@ -106,7 +106,9 @@ object Microlibs {
     .in(file("adt-macros"))
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
     .dependsOn(macroUtils, nonempty)
-    .settings(moduleName := "adt-macros")
+    .settings(
+      moduleName := "adt-macros",
+      scalacOptions --= Seq("-source:3.0-migration"))
 
   lazy val macroUtilsJVM = macroUtils.jvm
   lazy val macroUtilsJS  = macroUtils.js
