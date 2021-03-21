@@ -29,7 +29,7 @@ object AdtMacros:
       def values[T: Type]: List[Expr[A]] =
         Type.of[T] match
           case '[h *: t] =>
-            val e = MacroUtils.exprSingletonOrThrow[h]
+            val e = MacroUtils.needSingletonValueForType[h]
             e.asInstanceOf[Expr[A]] :: values[t]
           case '[EmptyTuple] =>
             Nil
@@ -118,7 +118,7 @@ object AdtMacros:
         toValues += toValue
 
         val adtType = adt.asType.asInstanceOf[Type[Adt]]
-        val adtObj = MacroUtils.exprSingletonOrThrow(using adtType)
+        val adtObj = MacroUtils.needSingletonValueForType(using adtType)
         adtValues :+= adtObj
         toCases :+= CaseDef(fromCase._2, None, adtObj.asTerm)
       end for
@@ -127,7 +127,7 @@ object AdtMacros:
       // logAll("toValues", toValues)(identity)
       // logAll("adtValues", adtValues)(_.show)
 
-      val toFn = MacroUtils.anonymousMatch[A, Adt](toCases)
+      val toFn = MacroUtils.mkAnonymousMatch[A, Adt](toCases)
 
       val result = '{
         val from: Adt => A = $trans

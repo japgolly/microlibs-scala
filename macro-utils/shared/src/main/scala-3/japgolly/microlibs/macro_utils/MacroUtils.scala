@@ -41,7 +41,14 @@ object MacroUtils:
   inline def fail(msg: String)(using Quotes): Nothing =
     quotes.reflect.report.throwError(msg)
 
-  def exprSingleton[A: Type](using Quotes): Option[Expr[A]] =
+  def logAll[A](name: String, as: Iterable[A])(f: A => Any): Unit =
+    val xs = as.toIndexedSeq
+    println(s"$name (${xs.length}):")
+    for (i <- xs.indices)
+      val a = xs(i)
+      println(s"  $i) ${f(a)}")
+
+  def getSingletonValueForType[A: Type](using Quotes): Option[Expr[A]] =
     Expr.summon[ValueOf[A]].map { e =>
       import quotes.reflect.*
       e.asTerm match
@@ -49,26 +56,26 @@ object MacroUtils:
         case _                 => '{ $e.value }
     }
 
-  def exprSingletonOrThrow[A](using Type[A])(using Quotes): Expr[A] =
-    exprSingleton[A].getOrElse(fail("Unable to get a singleton value for: " + Type.show[A]))
+  def needSingletonValueForType[A](using Type[A])(using Quotes): Expr[A] =
+    getSingletonValueForType[A].getOrElse(fail("Unable to get a singleton value for: " + Type.show[A]))
 
-  def exprSummonOrThrow[A: Type](using Quotes): Expr[A] =
+  def needGiven[A: Type](using Quotes): Expr[A] =
     Expr.summon[A] match
       case Some(e) => e
       case None    => fail(s"Could not find given ${Type.show[A]}")
 
-  def exprSummonTupleFieldsOrThrow[A: Type](using Quotes): List[Expr[Any]] =
+  def needGivensInTuple[A: Type](using Quotes): List[Expr[Any]] =
     Type.of[A] match
-      case '[h *: t]     => exprSummonOrThrow[ToExpr[h]] :: exprSummonTupleFieldsOrThrow[t]
+      case '[h *: t]     => needGiven[ToExpr[h]] :: needGivensInTuple[t]
       case '[EmptyTuple] => Nil
       case _             => fail(s"${Type.show[A]} is not a fully-known tuple type")
 
-  def exprArrayOf[A: Type](as: Seq[Expr[A]])(using Quotes): Expr[Array[A]] =
-    val ct = exprSummonOrThrow[ClassTag[A]]
+  def mkArrayExpr[A: Type](as: Seq[Expr[A]])(using Quotes): Expr[Array[A]] =
+    val ct = needGiven[ClassTag[A]]
     '{ Array(${Varargs(as)}: _*)(using $ct) }
 
-  def exprArrayOfF[F[_]: Type, A](as: Seq[Expr[F[A]]])(using Quotes): Expr[Array[F[Any]]] =
-    exprArrayOf[F[Any]](as.map(_.asFAny))
+  def mkArrayExprF[F[_]: Type, A](as: Seq[Expr[F[A]]])(using Quotes): Expr[Array[F[Any]]] =
+    mkArrayExpr[F[Any]](as.map(_.asFAny))
 
   trait Field:
     val idx: Int
@@ -157,7 +164,7 @@ object MacroUtils:
     import quotes.reflect.*
 
     def result[T: Type]: Expr[B] =
-      val summonMap = mapByFieldTypes[T, Expr[F[Any]]]([t] => (t: Type[t]) ?=> exprSummonOrThrow[F[t]].asFAny)
+      val summonMap = mapByFieldTypes[T, Expr[F[Any]]]([t] => (t: Type[t]) ?=> needGiven[F[t]].asFAny)
       val summons = summonMap.toArray
       val terms = summons.iterator.map(_._2.asTerm).toList
       ValDef.let(Symbol.spliceOwner, terms) { refs =>
@@ -181,7 +188,7 @@ object MacroUtils:
       case _ =>
         fail(s"Mirror not found for ${Type.show[A]}")
 
-  def seqMerge[A, B](as: Seq[A], empty: => B, one: A => B, many: Seq[A] => B): B =
+  def reduceSeq[A, B](as: Seq[A], empty: => B, one: A => B, many: Seq[A] => B): B =
     if (as.isEmpty)
       empty
     else if (as.sizeIs == 1)
@@ -196,7 +203,7 @@ object MacroUtils:
                             outer: Fn2Clause[A, B, X] => Expr[Y],
                             merge: Fn2Clause[X, X, X]
                            ): Expr[Y] =
-    seqMerge[Fn2Clause[A, B, X], Expr[Y]](
+    reduceSeq[Fn2Clause[A, B, X], Expr[Y]](
       as    = fs,
       empty = empty.fold(x => outer((_, _) => x), identity),
       one   = outer,
@@ -213,9 +220,9 @@ object MacroUtils:
     withCachedGivens[A, F, F[A]](m) { lookup =>
 
       val fields = mirrorFields(m)
-      // val givens = exprArrayOfF(fields.map(lookup(_).substFAny))
+      // val givens = mkArrayExprF(fields.map(lookup(_).substFAny))
       // TODO Delete ↓ and restore ↑ after Scala 3.0.0-RC2
-      val givens = exprArrayOfF(fields.map {f => '{ ${lookup(f)}.asInstanceOf[F[Any]] }})
+      val givens = mkArrayExprF(fields.map {f => '{ ${lookup(f)}.asInstanceOf[F[Any]] }})
 
       ValDef.let(Symbol.spliceOwner, "m", m.asTerm) { _m =>
         val m = _m.asExprOf[Mirror.SumOf[A]]
@@ -247,13 +254,6 @@ object MacroUtils:
 
       case _ =>
         fail(s"Not a sum type: ${Type.show[A]}")
-
-  def logAll[A](name: String, as: Iterable[A])(f: A => Any): Unit =
-    val xs = as.toIndexedSeq
-    println(s"$name (${xs.length}):")
-    for (i <- xs.indices)
-      val a = xs(i)
-      println(s"  $i) ${f(a)}")
 
   def extractCaseDefs[T, V](e: Expr[T => V])(using q: Quotes): List[q.reflect.CaseDef] =
     import quotes.reflect.*
@@ -289,11 +289,11 @@ object MacroUtils:
         fail(s"Expecting a case like: {case _: Type => ?}\n  Got: $x\n  In: ${e.show}")
     }
 
-  def anonymousMatch[A: Type, B: Type](using q: Quotes)(cases: Seq[q.reflect.CaseDef]): Expr[A => B] =
+  def mkAnonymousMatch[A: Type, B: Type](using q: Quotes)(cases: Seq[q.reflect.CaseDef]): Expr[A => B] =
     import quotes.reflect.*
     def matchOn(a: Expr[A]): Expr[B] =
       Match(a.asTerm, cases.toList).asExprOf[B]
     '{ (a: A) => ${matchOn('a)} }
 
   def showUnorderedTypes(using q: Quotes)(ts: Set[q.reflect.TypeRepr]): String =
-    ts.toList.map(_.toString).sorted.mkString(", ")
+    ts.iterator.map(_.toString).toArray.sorted.mkString(", ")
