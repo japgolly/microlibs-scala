@@ -42,29 +42,53 @@ object AdtMacros:
   // ===================================================================================================================
 
   /** Because sometimes order matters. */
-  inline def adtValuesManually[A](inline values: A*): NonEmptyVector[A] =
-    ${ adtValuesManuallyImpl[A]('values, false) }
+  inline def adtValuesManually[A](inline allowDuplicateTypes: Boolean = false,
+                                  inline allowDuplicateValues: Boolean = false,
+                                  inline debug: Boolean = false)
+                                 (inline values: A*): NonEmptyVector[A] =
+    ${
+      adtValuesManuallyImpl[A]('values)(
+        _allowDuplicateTypes  = 'allowDuplicateTypes,
+        _allowDuplicateValues = 'allowDuplicateValues,
+        _debug                = 'debug,
+      )
+    }
 
   inline def _adtValuesManually[A](inline values: A*): NonEmptyVector[A] =
-    ${ adtValuesManuallyImpl[A]('values, true) }
+    adtValuesManually(debug = true)(values*)
 
-  private def adtValuesManuallyImpl[A: Type](varargs: Expr[Seq[A]], debug: Boolean)(using Quotes): Expr[NonEmptyVector[A]] =
+  private def adtValuesManuallyImpl[A: Type](varargs: Expr[Seq[A]])
+                                            (_allowDuplicateTypes: Expr[Boolean],
+                                             _allowDuplicateValues: Expr[Boolean],
+                                             _debug: Expr[Boolean])
+                                            (using Quotes): Expr[NonEmptyVector[A]] =
+    import quotes.reflect.*
+
+    // TODO https://github.com/lampepfl/dotty/issues/11835
+    val allowDuplicateTypes  = _allowDuplicateTypes .value.getOrElse(false)
+    val allowDuplicateValues = _allowDuplicateValues.value.getOrElse(false)
+    val debug                = _debug               .value.getOrElse(false)
+
     MacroUtils.withNonEmptySumTypeTypes(Type.of[A])([types] => (_: Type[types]) ?=> {
-      import quotes.reflect.*
 
+      var seen = if allowDuplicateValues then null else MacroUtils.ExprSet.empty[A]
       var map = MacroUtils.mapByFieldTypes[types, Option[Expr[A]]]([t] => (_: Type[t]) ?=> None)
       val keyList = map.keys.toList
-
-      // TODO ensure all singletons
 
       val Varargs(argList) = varargs
       for (arg <- argList)
         val argType = arg.asTerm.tpe
         keyList.filter(argType <:< _) match
           case t :: Nil =>
-            map(t) match
-              case None    => map = map.updated(t, Some(arg))
-              case Some(a) => fail(s"Duplicate arguments to ${t.show} provided:\n  - ${a.show}\n  - ${arg.show}")
+            if !allowDuplicateTypes then
+              for (a <- map(t))
+                val ok = allowDuplicateValues && a.matches(arg)
+                if !ok then fail(s"Duplicate arguments to ${t.show} provided:\n  - ${a.show}\n  - ${arg.show}")
+            if seen != null then
+              if seen.contains(arg) then
+                fail(s"Duplicate value specified: ${arg.show}")
+              seen += arg
+            map = map.updated(t, Some(arg))
           case a :: b :: _ =>
             fail(s"(${arg.show}: $argType) is a subtype of both ${a.show} and ${b.show}")
           case Nil =>
