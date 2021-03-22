@@ -118,7 +118,8 @@ object Microlibs {
     .settings(
       moduleName := "macro-utils",
       scalacOptions --= Seq("-source:3.0-migration"),
-      libraryDependencies += Dep.ScalaCollCompat.value)
+      libraryDependencies += Dep.ScalaCollCompat.value,
+      libraryDependencies ++= Seq(Dep.SourceCode.value).filterNot(_ => isDotty.value))
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js

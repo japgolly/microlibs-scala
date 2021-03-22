@@ -2,6 +2,7 @@ package japgolly.microlibs.macro_utils
 
 import scala.annotation.tailrec
 import scala.collection.compat._
+import sourcecode.Line
 
 object MacroUtils {
   sealed trait FindSubClasses
@@ -28,8 +29,8 @@ abstract class MacroUtils {
 
   final def sep = ("_" * 120) + "\n"
 
-  final def fail(msg: String): Nothing =
-    c.abort(c.enclosingPosition, msg)
+  final def fail(msg: String)(implicit filename: sourcecode.FileName, line: Line): Nothing =
+    c.abort(c.enclosingPosition, s"$msg (${filename.value}:${line.value})")
 
   final def warn(msg: String): Unit =
     c.warning(c.enclosingPosition, msg)
@@ -40,7 +41,7 @@ abstract class MacroUtils {
     t
   }
 
-  final def ensureConcrete(t: Type): Unit = {
+  final def ensureConcrete(t: Type)(implicit filename: sourcecode.FileName, line: Line): Unit = {
     val sym = t.typeSymbol.asClass
     if (sym.isAbstract)
       fail(s"${sym.name} is abstract which is not allowed.")
@@ -56,13 +57,13 @@ abstract class MacroUtils {
     t
   }
 
-  final def ensureCaseClass(t: Type): Unit = {
+  final def ensureCaseClass(t: Type)(implicit filename: sourcecode.FileName, line: Line): Unit = {
     val sym = t.typeSymbol.asClass
     if (!sym.isCaseClass)
       fail(s"${sym.name} is not a case class.")
   }
 
-  final def primaryConstructorParams(t: Type): List[Symbol] =
+  final def primaryConstructorParams(t: Type)(implicit filename: sourcecode.FileName, line: Line): List[Symbol] =
     t.decls
       .collectFirst { case m: MethodSymbol if m.isPrimaryConstructor => m }
       .getOrElse(fail("Unable to discern primary constructor."))
@@ -70,13 +71,13 @@ abstract class MacroUtils {
       .headOption
       .getOrElse(fail("Primary constructor missing paramList."))
 
-  final def primaryConstructorParams_require1(t: Type): Symbol =
+  final def primaryConstructorParams_require1(t: Type)(implicit filename: sourcecode.FileName, line: Line): Symbol =
     primaryConstructorParams(t) match {
       case p :: Nil => p
       case x        => fail(s"One field expected. ${t.typeSymbol.name} has: $x")
     }
 
-  final def primaryConstructorParams_require2(t: Type): (Symbol, Symbol) =
+  final def primaryConstructorParams_require2(t: Type)(implicit filename: sourcecode.FileName, line: Line): (Symbol, Symbol) =
     primaryConstructorParams(t) match {
       case a :: b :: Nil => (a, b)
       case x             => fail(s"Two fields expected. ${t.typeSymbol.name} has: $x")
@@ -96,7 +97,7 @@ abstract class MacroUtils {
     (a, A)
   }
 
-  final def ensureValidAdtBase(tpe: Type): ClassSymbol = {
+  final def ensureValidAdtBase(tpe: Type)(implicit filename: sourcecode.FileName, line: Line): ClassSymbol = {
     tpe.typeConstructor // https://issues.scala-lang.org/browse/SI-7755
     val sym = tpe.typeSymbol.asClass
 
@@ -202,7 +203,7 @@ abstract class MacroUtils {
     deterministicOrderC(set)
   }
 
-  final def findConcreteTypesNE(tpe: Type, f: FindSubClasses): Vector[ClassSymbol] = {
+  final def findConcreteTypesNE(tpe: Type, f: FindSubClasses)(implicit filename: sourcecode.FileName, line: Line): Vector[ClassSymbol] = {
     val r = findConcreteTypes(tpe, f)
     if (r.isEmpty)
       fail(s"Unable to find concrete types for ${tpe.typeSymbol.name}.")
@@ -212,7 +213,7 @@ abstract class MacroUtils {
   final def findConcreteAdtTypes(tpe: Type, f: FindSubClasses): Vector[Type] =
     findConcreteTypes(tpe, f) map (determineAdtType(tpe, _))
 
-  final def findConcreteAdtTypesNE(tpe: Type, f: FindSubClasses): Vector[Type] =
+  final def findConcreteAdtTypesNE(tpe: Type, f: FindSubClasses)(implicit filename: sourcecode.FileName, line: Line): Vector[Type] =
     findConcreteTypesNE(tpe, f) map (determineAdtType(tpe, _))
 
   /**
@@ -288,12 +289,6 @@ abstract class MacroUtils {
       case _ => fail(s"Expected a literal string, got: ${showRaw(e)}")
     }
 
-  final def readMacroArg_symbol(e: c.Expr[scala.Symbol]): String =
-    e match {
-      case Expr(Apply(_, List(Literal(Constant(n: String))))) => n
-      case _ => fail(s"Expected a symbol, got: ${showRaw(e)}")
-    }
-
   final def readMacroArg_stringString(e: c.Expr[(String, String)]): (String, Literal) =
     e match {
       // "k" -> "v"
@@ -301,15 +296,6 @@ abstract class MacroUtils {
         (k, v)
       case x =>
         fail(s"""Expected "k" -> "v", got: $x\n${showRaw(x)}""")
-    }
-
-  final def readMacroArg_symbolString(e: c.Expr[(scala.Symbol, String)]): (String, Literal) =
-    e match {
-      // 'k -> "v"
-      case Expr(Apply(TypeApply(Select(Apply(_, List(Apply(_, List(Literal(Constant(k: String)))))), _), _), List(v@Literal(Constant(_: String))))) =>
-        (k, v)
-      case x =>
-        fail(s"""Expected 'k -> "v", got: $x\n${showRaw(x)}""")
     }
 
   final def readMacroArg_symbolBoolean(e: c.Expr[(scala.Symbol, Boolean)]): (String, Boolean) =
@@ -413,11 +399,11 @@ abstract class MacroUtils {
       case i         => Some(i)
     }
 
-  final def needInferImplicit(t: Type): Tree =
+  final def needInferImplicit(t: Type)(implicit filename: sourcecode.FileName, line: Line): Tree =
     tryInferImplicit(t) getOrElse fail(s"Implicit not found: $t")
 
   implicit val liftInit = Liftable[Init](i => q"..${i.stmts}")
-  class Init(freshNameFn: Int => String) {
+  class Init(freshNameFn: Int => String, lazyVals: Boolean = false) {
     var seen = Map.empty[String, TermName]
     var stmts: Vector[Tree] = Vector.empty
 
@@ -430,21 +416,36 @@ abstract class MacroUtils {
     def +=(t: Tree): Unit =
       stmts :+= t
 
-    def valImp(tot: TypeOrTree): TermName = tot match {
-      case GotType(t) => valDef(needInferImplicit(t))
-      case GotTree(t) => valDef(q"implicitly[$t]")
+    def ++=(ts: IterableOnce[Tree]): Unit =
+      ts.iterator.foreach(this.+=)
+
+    def valImp(tot: TypeOrTree)(implicit filename: sourcecode.FileName,  line: Line): TermName = tot match {
+      case GotType(t) => valDef(t, needInferImplicit(t))
+      case GotTree(t) => valDef(None, q"implicitly[$t]")
     }
 
-    def valDef(value: Tree): TermName = {
+    def valDef(typ: Type, value: Tree): TermName =
+      valDef(Some(typ), value)
+
+    def valDef(typ: Option[Type], value: Tree): TermName = {
       val k = value.toString()
       seen.get(k) match {
         case None =>
           val v = TermName(newName())
-          this += q"val $v = $value"
+          this += (typ match {
+            case Some(t) => if (lazyVals) q"lazy val $v: $t = $value" else q"val $v: $t = $value"
+            case None    => if (lazyVals) q"lazy val $v = $value"     else q"val $v = $value"
+          })
           seen = seen.updated(k, v)
           v
         case Some(v) => v
       }
+    }
+
+    def varDef(typ: Type, value: Tree): TermName = {
+      val v = TermName(newName())
+      this += q"var $v: $typ = $value"
+      v
     }
 
     def wrap(body: Tree): Tree =
@@ -503,9 +504,9 @@ abstract class MacroUtils {
       b.result()
     }
 
-  final def primaryConstructorParamsExcluding(t: Type, exclusions: Seq[c.Expr[scala.Symbol]]): List[(TermName, Type)] =
+  final def primaryConstructorParamsExcluding(t: Type, exclusions: Seq[c.Expr[String]]): List[(TermName, Type)] =
     excludeNamedParams(
-      exclusions.map(readMacroArg_symbol),
+      exclusions.map(readMacroArg_string),
       primaryConstructorParams(t).map(nameAndType(t, _)))
 
   def showUnorderedTypes(ts: Set[Type]): String =

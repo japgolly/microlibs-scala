@@ -45,7 +45,7 @@ class ScalazMacros(val c: blackbox.Context) extends MacroUtils {
       val cases = crawlADT[CaseDef](T, (_, pt) => {
         val equalP = appliedType(equal, pt)
         tryInferImplicit(equalP).map { et =>
-          val e = init.valDef(et)
+          val e = init.valDef(equalP, et)
           cq"x: $pt => b match {case y: $pt => $e.equal(x,y); case _ => false}"
         }
       }, (_, pt) => {
