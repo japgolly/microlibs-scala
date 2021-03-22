@@ -16,11 +16,9 @@ trait NameImplicits {
 }
 
 object NameMacros {
-  def name(expr: Expr[String])(using Quotes): Expr[Name] = {
-    import quotes.reflect.*
-    expr.asTerm match {
-      case Inlined(_, _, Literal(StringConstant(s))) => '{ Name.now($expr) }
-      case _                                         => '{ Name($expr) }
-    }
-  }
+  def name(expr: Expr[String])(using Quotes): Expr[Name] =
+    if expr.value.isDefined then
+      '{ Name.now($expr) }
+    else
+      '{ Name($expr) }
 }
