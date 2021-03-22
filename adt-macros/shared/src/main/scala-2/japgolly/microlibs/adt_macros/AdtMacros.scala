@@ -19,12 +19,7 @@ object AdtMacros {
   def _adtValues[T]: NonEmptyVector[T] = macro AdtMacros.debugAdtValues[T]
 
   /** Because sometimes order matters. */
-  def adtValuesManually[T](
-      allowDuplicateTypes: Boolean = true,
-      allowDuplicateValues: Boolean = false,
-      debug: Boolean = false
-    )(vs: T*): NonEmptyVector[T] = macro AdtMacros.quietAdtValuesManual[T]
-
+  def adtValuesManually[T](vs: T*): NonEmptyVector[T] = macro AdtMacros.quietAdtValuesManual[T]
   def _adtValuesManually[T](vs: T*): NonEmptyVector[T] = macro AdtMacros.debugAdtValuesManual[T]
 
   def valuesForAdt[T, V](f: T => V): NonEmptyVector[V] = macro AdtMacros.quietValuesForAdt[T, V]
@@ -103,38 +98,10 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
     c.Expr[AdtIsoSet[Adt, T]](impl)
   }
 
-  def quietAdtValuesManual[T: c.WeakTypeTag](
-        allowDuplicateTypes: c.Expr[Boolean],
-        allowDuplicateValues: c.Expr[Boolean],
-        debug: c.Expr[Boolean],
-      )(vs: c.Expr[T]*): c.Expr[NonEmptyVector[T]] = {
-
-    val _allowDuplicateTypes = readMacroArg_boolean(allowDuplicateTypes)
-    val _allowDuplicateValues = readMacroArg_boolean(allowDuplicateValues)
-    val _debug = readMacroArg_boolean(debug)
-
-    implAdtValuesManual(
-      _allowDuplicateTypes,
-      _allowDuplicateValues,
-      _debug,
-    )(vs)
-  }
-
-  def debugAdtValuesManual[T: c.WeakTypeTag](vs: c.Expr[T]*): c.Expr[NonEmptyVector[T]] =
-    implAdtValuesManual(
-      allowDuplicateTypes = true,
-      allowDuplicateValues = false,
-      debug = true,
-    )(vs)
-
-  def implAdtValuesManual[T: c.WeakTypeTag](
-      allowDuplicateTypes: Boolean,
-      allowDuplicateValues: Boolean,
-      debug: Boolean
-      )(vs: Seq[c.Expr[T]]): c.Expr[NonEmptyVector[T]] = {
+  def quietAdtValuesManual[T: c.WeakTypeTag](vs: c.Expr[T]*): c.Expr[NonEmptyVector[T]] = implAdtValuesManual(false)(vs)
+  def debugAdtValuesManual[T: c.WeakTypeTag](vs: c.Expr[T]*): c.Expr[NonEmptyVector[T]] = implAdtValuesManual(true )(vs)
+  def implAdtValuesManual[T: c.WeakTypeTag](debug: Boolean)(vs: Seq[c.Expr[T]]): c.Expr[NonEmptyVector[T]] = {
     val T = weakTypeOf[T]
-
-    val _ = allowDuplicateTypes // ignored in Scala 2
 
     val all = findConcreteTypesNE(T, LeavesOnly)
     if (all.isEmpty)
@@ -144,19 +111,17 @@ class AdtMacros(val c: blackbox.Context) extends MacroUtils with JapgollyAccess 
         fail(s"Polymorphic case not supported: ${a.toType}")
 
     var unseen = all.map(_.toType)
-    var seen = if (allowDuplicateValues) null else Set.empty[String]
+    var seen = Set.empty[String]
 
     def attempt(tree: Tree): Unit = {
       val t = tree.tpe.dealias
       if (!(t <:< T))
         fail(s"$t is not a subclass of $T")
       val expr = tree.toString()
-      if (seen != null) {
-        if (seen.contains(expr))
-          fail(s"Duplicate value: $expr")
-        seen += expr
-      }
+      if (seen.contains(expr))
+        fail(s"Duplicate value: $expr")
       unseen = unseen.filterNot(_ <:< t)
+      seen += expr
     }
 
     for (v <- vs)
