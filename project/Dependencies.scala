@@ -1,6 +1,5 @@
 import sbt._
 import sbt.Keys._
-import dotty.tools.sbtplugin.DottyPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 
 object Dependencies {
@@ -32,8 +31,8 @@ object Dependencies {
     val NyayaTest       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-test"              % Ver.Nyaya)
     val ScalaCollCompat = Def.setting("org.scala-lang.modules"        %%% "scala-collection-compat" % Ver.ScalaCollCompat)
     val ScalaCompiler   = Def.setting("org.scala-lang"                  % "scala-compiler"          % scalaVersion.value)
-    val ScalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.ScalaJsJavaTime withDottyCompat scalaVersion.value)
-    val Scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.Scalaz withDottyCompat scalaVersion.value)
+    val ScalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.ScalaJsJavaTime cross CrossVersion.for3Use2_13)
+    val Scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.Scalaz cross CrossVersion.for3Use2_13)
     val SourceCode      = Def.setting("com.lihaoyi"                   %%% "sourcecode"              % Ver.SourceCode)
     val UnivEq          = Def.setting("com.github.japgolly.univeq"    %%% "univeq"                  % Ver.UnivEq)
     val UnivEqScalaz    = Def.setting("com.github.japgolly.univeq"    %%% "univeq-scalaz"           % Ver.UnivEq)

@@ -1,7 +1,6 @@
 import sbt._
 import Keys._
 import com.jsuereth.sbtpgp.PgpKeys
-import dotty.tools.sbtplugin.DottyPlugin.autoImport._
 import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import pl.project13.scala.sbt.JmhPlugin
 import sbtcrossproject.CrossPlugin.autoImport._
@@ -54,20 +53,20 @@ object Microlibs {
                                          case (2, _) => scalac2Flags
                                          case (3, _) => scalac3Flags
                                        }.value,
-      scalacOptions in Test        --= Seq("-Ywarn-dead-code", "-Ywarn-unused"),
+      Test / scalacOptions         --= Seq("-Ywarn-dead-code", "-Ywarn-unused"),
       testFrameworks                := Nil,
-      shellPrompt in ThisBuild      := ((s: State) => Project.extract(s).currentRef.project + "> "),
+      ThisBuild / shellPrompt       := ((s: State) => Project.extract(s).currentRef.project + "> "),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseTagComment             := s"v${(version in ThisBuild).value}",
+      releaseTagComment             := s"v${(ThisBuild / version).value}",
       releaseVcsSign                := true,
-      libraryDependencies          ++= Seq(Dep.KindProjector).filterNot(_ => isDotty.value),
+      libraryDependencies          ++= Seq(Dep.KindProjector).filterNot(_ => scalaVersion.value.startsWith("3")),
   ))
 
   def definesMacros = ConfigureBoth(
     _.settings(
-      scalacOptions       ++= (if (isDotty.value) Nil else Seq("-language:experimental.macros")),
-      libraryDependencies ++= (if (isDotty.value) Nil else Seq(Dep.ScalaCompiler.value % Provided)),
+      scalacOptions       ++= (if (scalaVersion.value startsWith "3") Nil else Seq("-language:experimental.macros")),
+      libraryDependencies ++= (if (scalaVersion.value startsWith "3") Nil else Seq(Dep.ScalaCompiler.value % Provided)),
   ))
 
   def utestSettings = ConfigureBoth(
@@ -119,7 +118,7 @@ object Microlibs {
       moduleName := "macro-utils",
       scalacOptions --= Seq("-source:3.0-migration"),
       libraryDependencies += Dep.ScalaCollCompat.value,
-      libraryDependencies ++= Seq(Dep.SourceCode.value).filterNot(_ => isDotty.value))
+      libraryDependencies ++= Seq(Dep.SourceCode.value).filterNot(_ => scalaVersion.value.startsWith("3")))
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js
@@ -203,12 +202,12 @@ object Microlibs {
       javaOptions ++= Seq("-server", "-Xss8M"),
 
       // Add the JAMM jar as an agent
-      javaOptions in run := {
-        val classPath = (dependencyClasspath in Compile).value
+      run / javaOptions := {
+        val classPath = (Compile / dependencyClasspath).value
         val jammJar = classPath.collectFirst {
           case sbt.Attributed(f) if f.getName.matches("jamm-[0-9.]+\\.jar") => f.getAbsolutePath
         }.get
-        val oldOptions = (javaOptions in run).value
+        val oldOptions = (run / javaOptions).value
         val newOptions = oldOptions :+ s"-javaagent:$jammJar"
         newOptions
       }
