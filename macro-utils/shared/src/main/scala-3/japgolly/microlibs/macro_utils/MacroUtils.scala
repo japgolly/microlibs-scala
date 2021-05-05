@@ -12,7 +12,7 @@ object MacroUtils:
     println(s"$name (${xs.length}):")
     for (i <- xs.indices)
       val a = xs(i)
-      println(s"  $i) ${f(a)}")
+      println(s"  [${i+1}/${xs.length}] ${f(a)}")
 
   def getSingletonValueForType[A: Type](using Quotes): Option[Expr[A]] =
     Expr.summon[ValueOf[A]].map { e =>
@@ -41,38 +41,31 @@ object MacroUtils:
     '{ Array(${Varargs(as)}: _*)(using $ct) }
 
   def mkArrayExprF[F[_]: Type, A](as: Seq[Expr[F[A]]])(using Quotes): Expr[Array[F[Any]]] =
-    mkArrayExpr[F[Any]](as.map(_.asFAny))
-
-  trait Field:
-    val idx: Int
-    type Name
-    type Type
-
-    implicit val fieldType: scala.quoted.Type[Type]
-
-    final def onProduct[P](p: Expr[P])(using Quotes, scala.quoted.Type[P]): Expr[Type] =
-      '{ $p.asInstanceOf[Product].productElement(${Expr(idx)}).asInstanceOf[Type] }
-
-  end Field
+    mkArrayExpr[F[Any]](as.map(_.asExprOfFAny))
 
   // def needMirrorSumOf[A: Type](using Quotes): Expr[Mirror.SumOf[A]] =
   //   Expr.summon[Mirror.Of[A]] match
   //     case Some('{ $m: Mirror.SumOf[A] }) => m
   //     case _ => fail(s"Not a sum type: ${Type.show[A]}")
 
-  def mirrorFields[A: Type, B](m: Expr[Mirror.Of[A]])(using Quotes): List[Field] =
+  def mirrorFields[A: Type](m: Expr[Mirror.Of[A]])(using Quotes): List[Field] = {
     import quotes.reflect.*
 
     def go[Ls: Type, Ts: Type](idx: Int): List[Field] =
       (Type.of[Ls], Type.of[Ts]) match
         case ('[l *: ll], '[t *: tt]) =>
           val t = Type.of[t]
-          val L = TypeRepr.of[l]
+          val _idx = idx
+          val _name = TypeRepr.of[l] match
+            case ConstantType(StringConstant(n)) => n
+            case _                               => "?"
           val f: Field = new Field {
-            override val idx                = idx
-            override type Name              = l
-            override type Type              = t
-            override implicit val fieldType = t
+            override type Name                 = l
+            override type Type                 = t
+            override val idx                   = _idx
+            override val name                  = _name
+            override def showType              = Type.show[t]
+            override implicit val typeInstance = t
           }
           f :: go[ll, tt](idx + 1)
 
@@ -84,6 +77,7 @@ object MacroUtils:
         go[ls, ts](0)
       case '{ $m: Mirror.SumOf[A] { type MirroredElemLabels = ls; type MirroredElemTypes = ts }} =>
         go[ls, ts](0)
+  }
 
   def mapByFieldTypes[A: Type, B](f: [C] => Type[C] ?=> B)(using q: Quotes): Map[q.reflect.TypeRepr, B] =
     import quotes.reflect.*
@@ -130,13 +124,13 @@ object MacroUtils:
     import quotes.reflect.*
 
     def result[T: Type]: Expr[B] =
-      val summonMap = mapByFieldTypes[T, Expr[F[Any]]]([t] => (t: Type[t]) ?=> needGiven[F[t]].asFAny)
+      val summonMap = mapByFieldTypes[T, Expr[F[Any]]]([t] => (t: Type[t]) ?=> needGiven[F[t]].asExprOfFAny)
       val summons = summonMap.toArray
       val terms = summons.iterator.map(_._2.asTerm).toList
       ValDef.let(Symbol.spliceOwner, terms) { refs =>
         val lookupFn: FieldLookup[F] =
           f => {
-            def fieldType = TypeRepr.of(using f.fieldType)
+            def fieldType = f.typeRepr
             val i = summons.indexWhere(_._1 == fieldType)
             if i < 0 then
               val t = Type.show[F[f.Type]]
