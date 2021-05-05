@@ -7,6 +7,8 @@ import scala.reflect.ClassTag
 object MacroUtils:
   import MacroEnv.*
 
+  val NewInstance = japgolly.microlibs.macro_utils.NewInstance
+
   def logAll[A](name: String, as: Iterable[A])(f: A => Any): Unit =
     val xs = as.toIndexedSeq
     println(s"$name (${xs.length}):")
