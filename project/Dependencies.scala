@@ -13,7 +13,7 @@ object Dependencies {
     val ScalaCollCompat = "2.4.3"
     val Scalaz          = "7.2.31"
     val SourceCode      = "0.2.6"
-    val UnivEq          = "1.4.0-RC3"
+    val UnivEq          = "1.4.0-RC4"
 
     // Internal
     val JAMM            = "0.3.3"
