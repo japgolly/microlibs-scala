@@ -7,7 +7,10 @@ import scala.reflect.ClassTag
 object MacroUtils:
   import MacroEnv.*
 
-  val NewInstance = japgolly.microlibs.macro_utils.NewInstance
+  export japgolly.microlibs.macro_utils.{
+    ExprSet,
+    NewInstance,
+  }
 
   def logAll[A](name: String, as: Iterable[A])(f: A => Any): Unit =
     val xs = as.toIndexedSeq
@@ -49,37 +52,6 @@ object MacroUtils:
   //   Expr.summon[Mirror.Of[A]] match
   //     case Some('{ $m: Mirror.SumOf[A] }) => m
   //     case _ => fail(s"Not a sum type: ${Type.show[A]}")
-
-  def mirrorFields[A: Type](m: Expr[Mirror.Of[A]])(using Quotes): List[Field] = {
-    import quotes.reflect.*
-
-    def go[Ls: Type, Ts: Type](idx: Int): List[Field] =
-      (Type.of[Ls], Type.of[Ts]) match
-        case ('[l *: ll], '[t *: tt]) =>
-          val t = Type.of[t]
-          val _idx = idx
-          val _name = TypeRepr.of[l] match
-            case ConstantType(StringConstant(n)) => n
-            case _                               => "?"
-          val f: Field = new Field {
-            override type Name                 = l
-            override type Type                 = t
-            override val idx                   = _idx
-            override val name                  = _name
-            override def showType              = Type.show[t]
-            override implicit val typeInstance = t
-          }
-          f :: go[ll, tt](idx + 1)
-
-        case ('[EmptyTuple], _) =>
-          Nil
-
-    m match
-      case '{ $m: Mirror.ProductOf[A] { type MirroredElemLabels = ls; type MirroredElemTypes = ts }} =>
-        go[ls, ts](0)
-      case '{ $m: Mirror.SumOf[A] { type MirroredElemLabels = ls; type MirroredElemTypes = ts }} =>
-        go[ls, ts](0)
-  }
 
   def mapByFieldTypes[A: Type, B](f: [C] => Type[C] ?=> B)(using q: Quotes): Map[q.reflect.TypeRepr, B] =
     import quotes.reflect.*
@@ -181,10 +153,8 @@ object MacroUtils:
     import quotes.reflect.*
     withCachedGivens[A, F, F[A]](m) { lookup =>
 
-      val fields = mirrorFields(m)
-      // val givens = mkArrayExprF(fields.map(lookup(_).substFAny))
-      // TODO Delete ↓ and restore ↑ after Scala 3.0.0-RC2
-      val givens = mkArrayExprF(fields.map {f => '{ ${lookup(f)}.asInstanceOf[F[Any]] }})
+      val fields = Fields.fromMirror(m)
+      val givens = mkArrayExprF(fields.map(lookup(_).castToFAny))
 
       ValDef.let(Symbol.spliceOwner, "m", m.asTerm) { _m =>
         val m = _m.asExprOf[Mirror.SumOf[A]]
