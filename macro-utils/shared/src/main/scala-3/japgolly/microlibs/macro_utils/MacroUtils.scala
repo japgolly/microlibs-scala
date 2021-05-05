@@ -8,6 +8,7 @@ object MacroUtils:
   import MacroEnv.*
 
   export japgolly.microlibs.macro_utils.{
+    CachedGivens,
     ExprSet,
     NewInstance,
   }
@@ -90,38 +91,6 @@ object MacroUtils:
     go[A]
     set
 
-  type FieldLookup[F[_]] = (f: Field) => Expr[F[f.Type]]
-
-  def withCachedGivens[A: Type, F[_]: Type, B: Type](m: Expr[Mirror.Of[A]])
-                                                    (use: FieldLookup[F] => Expr[B])
-                                                    (using Quotes): Expr[B] =
-    import quotes.reflect.*
-
-    def result[T: Type]: Expr[B] =
-      val summonMap = mapByFieldTypes[T, Expr[F[Any]]]([t] => (t: Type[t]) ?=> needGiven[F[t]].asExprOfFAny)
-      val summons = summonMap.toArray
-      val terms = summons.iterator.map(_._2.asTerm).toList
-      ValDef.let(Symbol.spliceOwner, terms) { refs =>
-        val lookupFn: FieldLookup[F] =
-          f => {
-            def fieldType = f.typeRepr
-            val i = summons.indexWhere(_._1 == fieldType)
-            if i < 0 then
-              val t = Type.show[F[f.Type]]
-              fail(s"Failed to find given $t in cache")
-            refs(i).asExprOf[F[f.Type]]
-          }
-        use(lookupFn).asTerm
-      }.asExprOf[B]
-
-    Expr.summon[Mirror.Of[A]] match
-      case Some('{ $m: Mirror.ProductOf[A] { type MirroredElemTypes = types } }) =>
-        result[types]
-      case Some('{ $m: Mirror.SumOf[A] { type MirroredElemTypes = types } }) =>
-        result[types]
-      case _ =>
-        fail(s"Mirror not found for ${Type.show[A]}")
-
   def reduceSeq[A, B](as: Seq[A], empty: => B, one: A => B, many: Seq[A] => B): B =
     if (as.isEmpty)
       empty
@@ -143,33 +112,6 @@ object MacroUtils:
       one   = outer,
       many  = fs => outer((x, y) => fs.iterator.map(_(x, y)).reduce(merge)),
     )
-
-  final case class TypeClassForSumBuilder[-A, +F](ordinal: Expr[A] => Expr[Int],
-                                                  tc: Expr[Int] => Expr[F])
-
-  def buidTypeClassForSum[F[_]: Type, A: Type](m: Expr[Mirror.SumOf[A]])
-                                              (f: TypeClassForSumBuilder[A, F[Any]] => Expr[F[A]])
-                                              (using Quotes): Expr[F[A]] =
-    import quotes.reflect.*
-    withCachedGivens[A, F, F[A]](m) { lookup =>
-
-      val fields = Fields.fromMirror(m)
-      val givens = mkArrayExprF(fields.map(lookup(_).castToFAny))
-
-      ValDef.let(Symbol.spliceOwner, "m", m.asTerm) { _m =>
-        val m = _m.asExprOf[Mirror.SumOf[A]]
-        ValDef.let(Symbol.spliceOwner, "g", givens.asTerm) { _givens =>
-          val givens = _givens.asExprOf[Array[F[Any]]]
-
-          val builder = TypeClassForSumBuilder[A, F[Any]](
-            ordinal = a => '{$m.ordinal($a)},
-            tc      = o => '{$givens($o)},
-          )
-
-          f(builder).asTerm
-        }
-      }.asExprOf[F[A]]
-    }
 
   def withNonEmptySumTypeTypes[A, B](a: Type[A])
                                     // (f: [t] => Type[t] ?=> Expr[Mirror.SumOf[A] { type MirroredElemTypes = t }] => B)

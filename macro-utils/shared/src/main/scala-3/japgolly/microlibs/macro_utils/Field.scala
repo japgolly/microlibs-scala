@@ -12,7 +12,7 @@ trait Field {
   def showType: String
   implicit val typeInstance: scala.quoted.Type[Type]
 
-  override def toString = s"[$idx] $name: $showType"
+  override def toString = s"[Field $idx] $name: $showType"
 
   final def typeRepr(using q: Quotes): q.reflect.TypeRepr =
     q.reflect.TypeRepr.of(using typeInstance)

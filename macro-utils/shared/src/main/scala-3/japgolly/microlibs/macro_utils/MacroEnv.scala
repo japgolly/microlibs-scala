@@ -11,7 +11,8 @@ object MacroEnv {
   }
 
   def fail(msg: String)(using Quotes): Nothing =
-    quotes.reflect.report.throwError(msg)
+    import quotes.reflect.*
+    quotes.reflect.report.throwError(msg, Position.ofMacroExpansion)
 
   def failNoStack(msg: String): Nothing = {
     val e = new RuntimeException(msg)
