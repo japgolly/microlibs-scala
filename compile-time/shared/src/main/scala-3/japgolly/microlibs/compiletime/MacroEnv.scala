@@ -1,4 +1,4 @@
-package japgolly.microlibs.macro_utils
+package japgolly.microlibs.compiletime
 
 import scala.annotation.targetName
 import scala.quoted.*
@@ -15,7 +15,7 @@ object MacroEnvStatic {
 
 object MacroEnv {
 
-  export japgolly.microlibs.macro_utils.{
+  export japgolly.microlibs.compiletime.{
     ExprMap,
     ExprSet,
     Field,

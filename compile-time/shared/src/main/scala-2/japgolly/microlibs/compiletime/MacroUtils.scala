@@ -1,4 +1,4 @@
-package japgolly.microlibs.macro_utils
+package japgolly.microlibs.compiletime
 
 import scala.annotation.tailrec
 import scala.collection.compat._

@@ -1,6 +1,6 @@
 package japgolly.microlibs.adt_macros
 
-import japgolly.microlibs.macro_utils.MacroEnv.*
+import japgolly.microlibs.compiletime.MacroEnv.*
 import japgolly.microlibs.nonempty.{NonEmptySet, NonEmptyVector}
 import japgolly.univeq.UnivEq
 import scala.compiletime.*

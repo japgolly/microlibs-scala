@@ -89,13 +89,13 @@ object Microlibs {
     Project("JVM", file(".rootJVM"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJVM, macroUtilsJVM, nameFnJVM, nonemptyJVM, recursionJVM, scalazExtJVM, stdlibExtJVM, testUtilJVM, utilsJVM)
+        adtMacrosJVM, compileTimeJVM, nameFnJVM, nonemptyJVM, recursionJVM, scalazExtJVM, stdlibExtJVM, testUtilJVM, utilsJVM)
 
   lazy val rootJS =
     Project("JS", file(".rootJS"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJS, macroUtilsJS, nameFnJS, nonemptyJS, recursionJS, scalazExtJS, stdlibExtJS, testUtilJS, utilsJS)
+        adtMacrosJS, compileTimeJS, nameFnJS, nonemptyJS, recursionJS, scalazExtJS, stdlibExtJS, testUtilJS, utilsJS)
 
   // ===================================================================================================================
 
@@ -104,18 +104,18 @@ object Microlibs {
   lazy val adtMacros = crossProject(JVMPlatform, JSPlatform)
     .in(file("adt-macros"))
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
-    .dependsOn(macroUtils, nonempty)
+    .dependsOn(compileTime, nonempty)
     .settings(
       moduleName := "adt-macros",
       scalacOptions --= Seq("-source:3.0-migration"))
 
-  lazy val macroUtilsJVM = macroUtils.jvm
-  lazy val macroUtilsJS  = macroUtils.js
-  lazy val macroUtils = crossProject(JVMPlatform, JSPlatform)
-    .in(file("macro-utils"))
+  lazy val compileTimeJVM = compileTime.jvm
+  lazy val compileTimeJS  = compileTime.js
+  lazy val compileTime = crossProject(JVMPlatform, JSPlatform)
+    .in(file("compile-time"))
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
     .settings(
-      moduleName := "macro-utils",
+      moduleName := "compile-time",
       scalacOptions --= Seq("-source:3.0-migration"),
       libraryDependencies += Dep.ScalaCollCompat.value,
       libraryDependencies ++= Seq(Dep.SourceCode.value).filterNot(_ => scalaVersion.value.startsWith("3")))
@@ -148,7 +148,7 @@ object Microlibs {
   lazy val scalazExt = crossProject(JVMPlatform, JSPlatform)
     .in(file("scalaz-ext"))
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
-    .dependsOn(macroUtils)
+    .dependsOn(compileTime)
     .settings(
       moduleName := "scalaz-ext",
       scalacOptions --= Seq("-source:3.0-migration"),

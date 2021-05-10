@@ -1,4 +1,4 @@
-package japgolly.microlibs.macro_utils
+package japgolly.microlibs.compiletime
 
 object InlineUtils:
 

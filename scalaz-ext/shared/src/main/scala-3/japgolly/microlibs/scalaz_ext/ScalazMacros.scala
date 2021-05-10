@@ -1,6 +1,6 @@
 package japgolly.microlibs.scalaz_ext
 
-import japgolly.microlibs.macro_utils.MacroEnv.*
+import japgolly.microlibs.compiletime.MacroEnv.*
 import scala.compiletime.*
 import scala.deriving.*
 import scala.quoted.*

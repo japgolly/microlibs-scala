@@ -1,4 +1,4 @@
-package japgolly.microlibs.macro_utils
+package japgolly.microlibs.compiletime
 
 import scala.deriving.*
 import scala.quoted.*
@@ -7,7 +7,7 @@ import scala.reflect.ClassTag
 object MacroUtils:
   import MacroEnv.*
 
-  export japgolly.microlibs.macro_utils.{
+  export japgolly.microlibs.compiletime.{
     CachedGivens,
     NewInstance,
   }
