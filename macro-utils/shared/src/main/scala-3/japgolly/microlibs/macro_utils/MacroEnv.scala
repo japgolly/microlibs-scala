@@ -37,37 +37,37 @@ object MacroEnv {
       import quotes.reflect.*
       Literal(UnitConstant()).asInlineExprOf[Unit]
 
-    def inlineConst(value: Boolean)(using Quotes): Expr[Int] =
+    def inlineConst(value: Boolean)(using Quotes): Expr[Boolean] =
       import quotes.reflect.*
-      Literal(BooleanConstant(value)).asInlineExprOf[Int]
+      Literal(BooleanConstant(value)).asInlineExprOf[Boolean]
 
-    def inlineConst(value: Byte)(using Quotes): Expr[Int] =
+    def inlineConst(value: Byte)(using Quotes): Expr[Byte] =
       import quotes.reflect.*
-      Literal(ByteConstant(value)).asInlineExprOf[Int]
+      Literal(ByteConstant(value)).asInlineExprOf[Byte]
 
-    def inlineConst(value: Short)(using Quotes): Expr[Int] =
+    def inlineConst(value: Short)(using Quotes): Expr[Short] =
       import quotes.reflect.*
-      Literal(ShortConstant(value)).asInlineExprOf[Int]
+      Literal(ShortConstant(value)).asInlineExprOf[Short]
 
     def inlineConst(value: Int)(using Quotes): Expr[Int] =
       import quotes.reflect.*
       Literal(IntConstant(value)).asInlineExprOf[Int]
 
-    def inlineConst(value: Long)(using Quotes): Expr[Int] =
+    def inlineConst(value: Long)(using Quotes): Expr[Long] =
       import quotes.reflect.*
-      Literal(LongConstant(value)).asInlineExprOf[Int]
+      Literal(LongConstant(value)).asInlineExprOf[Long]
 
-    def inlineConst(value: Float)(using Quotes): Expr[Int] =
+    def inlineConst(value: Float)(using Quotes): Expr[Float] =
       import quotes.reflect.*
-      Literal(FloatConstant(value)).asInlineExprOf[Int]
+      Literal(FloatConstant(value)).asInlineExprOf[Float]
 
-    def inlineConst(value: Double)(using Quotes): Expr[Int] =
+    def inlineConst(value: Double)(using Quotes): Expr[Double] =
       import quotes.reflect.*
-      Literal(DoubleConstant(value)).asInlineExprOf[Int]
+      Literal(DoubleConstant(value)).asInlineExprOf[Double]
 
-    def inlineConst(value: Char)(using Quotes): Expr[Int] =
+    def inlineConst(value: Char)(using Quotes): Expr[Char] =
       import quotes.reflect.*
-      Literal(CharConstant(value)).asInlineExprOf[Int]
+      Literal(CharConstant(value)).asInlineExprOf[Char]
 
     def inlineConst(value: String)(using Quotes): Expr[String] =
       inlineConstOrNull(value)
