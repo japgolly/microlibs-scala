@@ -45,3 +45,10 @@ object QuotingUtils:
       case None =>
         '{ $str.toInt }
 
+  def showCode(e: Expr[Any])(using Quotes): Expr[String] =
+    import quotes.reflect.*
+    Expr.inlineConst(e.show)
+
+  def showTasty(e: Expr[Any])(using Quotes): Expr[String] =
+    import quotes.reflect.*
+    Expr.inlineConst("" + e.asTerm)

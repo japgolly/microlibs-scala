@@ -22,3 +22,9 @@ object InlineUtils:
 
   transparent inline def toInt(str: String): Int =
     ${ QuotingUtils.toInt('str) }
+
+  transparent inline def showCode(inline body: Any): String =
+    ${ QuotingUtils.showCode('body) }
+
+  transparent inline def showTasty(inline body: Any): String =
+    ${ QuotingUtils.showTasty('body) }

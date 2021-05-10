@@ -168,7 +168,8 @@ object Microlibs {
   lazy val testUtilJS  = testUtil.js
   lazy val testUtil = crossProject(JVMPlatform, JSPlatform)
     .in(file("test-util"))
-    .configureCross(commonSettings, publicationSettings, utestSettings)
+    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings)
+    .dependsOn(compileTime)
     .settings(
       moduleName := "test-util",
       libraryDependencies ++= Seq(
