@@ -161,7 +161,9 @@ object Microlibs {
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings, useTestUtil)
     .settings(
       moduleName := "stdlib-ext",
-      libraryDependencies += Dep.ScalaCollCompat.value)
+      libraryDependencies ++= Seq(
+        Dep.ScalaCollCompat.value,
+        Dep.NyayaGen       .value % Test))
     .jsSettings(libraryDependencies += Dep.ScalaJsJavaTime.value % Test)
 
   lazy val testUtilJVM = testUtil.jvm
