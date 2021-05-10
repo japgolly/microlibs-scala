@@ -391,7 +391,7 @@ object LineDiff {
       else {
         val mid = (lo + high) >> 1
 
-        val (newLow, newHigh) = if (elems(mid) < elem)
+        val (newLow, newHigh) = if (ev(elems(mid)) < elem)
           (mid + 1, high)
         else
           (lo, mid)

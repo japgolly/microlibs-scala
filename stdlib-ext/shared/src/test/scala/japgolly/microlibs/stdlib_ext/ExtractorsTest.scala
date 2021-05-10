@@ -5,6 +5,8 @@ import java.time.Duration
 import utest._
 
 object ExtractorsTest extends TestSuite {
+  // TODO Workaround for https://github.com/lampepfl/dotty/issues/11798
+  import japgolly.microlibs.testutil.TestUtil.scalazEqualFromUnivEq
 
   override def tests = Tests {
 

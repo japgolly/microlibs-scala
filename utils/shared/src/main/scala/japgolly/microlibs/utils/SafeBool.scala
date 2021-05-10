@@ -102,7 +102,7 @@ object SafeBool {
 
     final type Values[+A] = SafeBool.Values[B, A]
 
-    final object Values {
+    object Values {
       def apply[A](f: B => A): Values[A] =
         SafeBool.Values(pos = f(positive), neg = f(negative))
 
@@ -110,7 +110,8 @@ object SafeBool {
         SafeBool.Values(a, a)
 
       def partition[C[_], A](as: IterableOnce[A])(f: A => B)(implicit factory: Factory[A, C[A]]): Values[C[A]] = {
-        val b = new Values(factory.newBuilder, factory.newBuilder)
+        type Bldr = scala.collection.mutable.Builder[A, C[A]]
+        val b = new SafeBool.Values[B, Bldr](factory.newBuilder, factory.newBuilder)
         for (a <- as.iterator) b(f(a)) += a
         b.map(_.result())
       }

@@ -9,16 +9,17 @@ object Dependencies {
     // Exported
     val Scala212        = "2.12.13"
     val Scala213        = "2.13.5"
-    val ScalaCollCompat = "2.4.2"
+    val Scala3          = "3.0.0-RC3"
+    val ScalaCollCompat = "2.4.3"
     val Scalaz          = "7.2.31"
-    val SourceCode      = "0.2.4"
-    val UnivEq          = "1.3.0"
+    val SourceCode      = "0.2.6"
+    val UnivEq          = "1.4.0-RC4"
 
     // Internal
     val JAMM            = "0.3.3"
     val KindProjector   = "0.11.3"
-    val MTest           = "0.7.7"
-    val Nyaya           = "0.10.0-RC1"
+    val MTest           = "0.7.9"
+    val Nyaya           = "0.10.0-RC2"
     val ScalaJsJavaTime = "1.0.0"
   }
 
@@ -30,8 +31,8 @@ object Dependencies {
     val NyayaTest       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-test"              % Ver.Nyaya)
     val ScalaCollCompat = Def.setting("org.scala-lang.modules"        %%% "scala-collection-compat" % Ver.ScalaCollCompat)
     val ScalaCompiler   = Def.setting("org.scala-lang"                  % "scala-compiler"          % scalaVersion.value)
-    val ScalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.ScalaJsJavaTime)
-    val Scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.Scalaz)
+    val ScalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.ScalaJsJavaTime cross CrossVersion.for3Use2_13)
+    val Scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.Scalaz cross CrossVersion.for3Use2_13)
     val SourceCode      = Def.setting("com.lihaoyi"                   %%% "sourcecode"              % Ver.SourceCode)
     val UnivEq          = Def.setting("com.github.japgolly.univeq"    %%% "univeq"                  % Ver.UnivEq)
     val UnivEqScalaz    = Def.setting("com.github.japgolly.univeq"    %%% "univeq-scalaz"           % Ver.UnivEq)

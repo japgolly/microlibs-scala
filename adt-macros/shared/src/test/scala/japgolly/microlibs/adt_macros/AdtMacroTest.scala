@@ -8,12 +8,6 @@ import japgolly.univeq.UnivEq
 
 object AdtMacroTest extends TestSuite {
 
-  /*
-  def adtIso[Adt, T](f: Adt => T): AdtIso[Adt, T] = macro AdtMacros.quietAdtIso[Adt, T]
-  def valuesForAdt[T, V](f: T => V): NonEmptyVector[V] = macro AdtMacros.quietValuesForAdt[T, V]
-  def valuesForAdtF[T, V](f: T => V): (NonEmptyVector[V], T => V) = macro AdtMacros.quietValuesForAdtF[T, V]
-   */
-
   def assertOrderedNEV[A](actual: NonEmptyVector[A], expect: NonEmptyVector[A]): Unit =
     assert(actual == expect)
 
@@ -40,25 +34,14 @@ object AdtMacroTest extends TestSuite {
       "s1" - assertUnorderedNEV(adtValues[MonoS1])(MonoS1.A)
       "s3" - assertUnorderedNEV(adtValues[MonoS3])(MonoS3.A, MonoS3.B, MonoS3.C)
       "d1" - assertFail(compileError("adtValues[MonoD1]"))
+      "d2" - assertFail(compileError("adtValues[MonoD2]"))
       "unsealed" - assertFail(compileError("adtValues[Unsealed]"))
 
-      "emptySubtype" - {
-        import EmptySubType._
-        assertUnorderedNEV(adtValues[A])(D)
-      }
-    }
-
-    "adtValuesManually" - {
-//      's1i - assertOrderedNEV(MonoS1.ValuesM)(MonoS1.A)
-//      's3i - assertOrderedNEV(MonoS3.ValuesM)(MonoS3.A, MonoS3.B, MonoS3.C)
-      "s1" - assertOrderedNEV(adtValuesManually[MonoS1](MonoS1.A))(MonoS1.A)
-      "s3" - assertOrderedNEV(adtValuesManually[MonoS3](MonoS3.A, MonoS3.B, MonoS3.C))(MonoS3.A, MonoS3.B, MonoS3.C)
-      "d2" - assertOrderedNEV(adtValuesManually[MonoD2](MonoD2.A, MonoD2.B(true), MonoD2.B(false)))(MonoD2.A, MonoD2.B(true), MonoD2.B(false))
-      "dupS1" - assertFail(compileError("adtValuesManually[MonoS1](MonoS1.A, MonoS1.A)"))
-      "dupS3" - assertFail(compileError("adtValuesManually[MonoS3](MonoS3.A, MonoS3.B, MonoS3.B, MonoS3.C)"))
-      "dupD2" - assertFail(compileError("adtValuesManually[MonoD2](MonoD2.B(true), MonoD2.A, MonoD2.B(true), MonoD2.B(false))"))
-      "missO" - assertFail(compileError("adtValuesManually[MonoS3](MonoS3.A, MonoS3.C)"))
-      "missC" - assertFail(compileError("adtValuesManually[MonoD2](MonoD2.A)"))
+      // TODO Pending https://github.com/lampepfl/dotty/issues/11765
+      // "emptySubtype" - {
+      //   import EmptySubType._
+      //   assertUnorderedNEV(adtValues[A])(D)
+      // }
     }
 
     "valuesForAdt" - {
@@ -71,13 +54,14 @@ object AdtMacroTest extends TestSuite {
           case _: D => "D"
         })("A", "B", "C", "D")
       }
-      "sub" - {
-        import MonoSub._
-        assertUnorderedNEV(valuesForAdt[MonoSub, String] {
-          case A => "A"
-          case _: B => "B"
-        })("A", "B")
-      }
+      // TODO Pending https://github.com/lampepfl/dotty/issues/11765
+      // "sub" - {
+      //   import MonoSub._
+      //   assertUnorderedNEV(valuesForAdt[MonoSub, String] {
+      //     case A => "A"
+      //     case _: B => "B"
+      //   })("A", "B")
+      // }
       "missing" - {
         import MonoD._
         assertFail(compileError("valuesForAdt[MonoD, String] {case _: A => \"A\"}"))
