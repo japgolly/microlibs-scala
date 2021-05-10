@@ -9,8 +9,8 @@ trait EscapeUtils {
   def appendQuoted(sb: JStringBuilder, s: String): Unit
   def appendEscaped(sb: JStringBuilder, s: String): Unit
 
-  final def appendQuoted(sb: StringBuilder, s: String): Unit = appendQuoted(sb.underlying, s)
-  final def appendEscaped(sb: StringBuilder, s: String): Unit = appendEscaped(sb.underlying, s)
+  def appendQuoted(sb: StringBuilder, s: String): Unit
+  def appendEscaped(sb: StringBuilder, s: String): Unit
 }
 
 object EscapeUtils extends EscapeUtils with PlatformSpecificEscapeUtils
