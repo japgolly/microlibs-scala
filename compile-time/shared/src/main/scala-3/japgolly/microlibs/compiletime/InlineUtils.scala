@@ -5,6 +5,11 @@ object InlineUtils:
   inline def warn(inline warning: String): Unit =
     ${ QuotingUtils.warn('warning) }
 
+  transparent inline def nonBlank(inline str: String): Option[String] =
+    inline trim(str) match
+      case "" => None
+      case v  => Some[v.type](v)
+
   transparent inline def replaceFirst(str: String, regex: String, repl: String): String =
     ${ QuotingUtils.replaceFirst('str, 'regex, 'repl) }
 
@@ -13,6 +18,16 @@ object InlineUtils:
 
   transparent inline def trim(str: String): String =
     ${ QuotingUtils.trim('str) }
+
+  transparent inline def trimLowerCaseNonBlank(inline s: String): Option[String] =
+    inline trim(toLowerCase(s)) match
+      case "" => None
+      case v  => Some[v.type](v)
+
+  transparent inline def trimLowerCaseNonBlank(inline o: Option[String]): Option[String] =
+    inline o match
+      case Some(v) => trimLowerCaseNonBlank(v)
+      case None    => None
 
   transparent inline def toLowerCase(str: String): String =
     ${ QuotingUtils.toLowerCase('str) }
