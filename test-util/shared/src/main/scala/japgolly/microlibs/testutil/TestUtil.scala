@@ -11,7 +11,7 @@ import scalaz.syntax.equal._
 import sourcecode.Line
 import TestUtilInternals._
 
-trait TestUtilWithoutUnivEq extends TestUtilImplicits {
+trait TestUtilWithoutUnivEq extends TypeTestingUtil with TestUtilImplicits {
 
   def withAtomicOutput[A](a: => A): A = {
     val os = new ByteArrayOutputStream()
