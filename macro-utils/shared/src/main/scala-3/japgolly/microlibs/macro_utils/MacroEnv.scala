@@ -3,12 +3,26 @@ package japgolly.microlibs.macro_utils
 import scala.annotation.targetName
 import scala.quoted.*
 
+object MacroEnvStatic {
+  import MacroEnv.*
+
+  inline def inlineSummon[A]: A =
+    ${ _inlineSummon[A] }
+
+  def _inlineSummon[A: Type](using Quotes): Expr[A] =
+    Expr.summonOrError[A]
+}
+
 object MacroEnv {
 
   export japgolly.microlibs.macro_utils.{
+    ExprMap,
+    ExprSet,
     Field,
     Fields,
+    Init,
   }
+  export EasierValDef.*
 
   def fail(msg: String)(using Quotes): Nothing =
     import quotes.reflect.*
@@ -22,6 +36,9 @@ object MacroEnv {
 
   // ===================================================================================================================
   extension (unused: Expr.type) {
+
+    def summonLater[A: Type](using Quotes): Expr[A] =
+      '{ MacroEnvStatic.inlineSummon[A] }
 
     def summonOrError[A](using Type[A])(using Quotes): Expr[A] =
       import quotes.reflect.*
@@ -88,6 +105,10 @@ object MacroEnv {
   // ===================================================================================================================
   extension [A] (self: Expr[A]) {
 
+    def inlined(using Quotes, Type[A]): Expr[A] =
+      import quotes.reflect.*
+      Inlined(None, Nil, self.asTerm).asExprOf[A]
+
     def showType(using Quotes): String =
       import quotes.reflect.*
       self.asTerm.tpe.show
@@ -99,7 +120,37 @@ object MacroEnv {
     def castTo[B](using Quotes, Type[A], Type[B]): Expr[B] =
       '{ $self.asInstanceOf[B] }
 
+    def prepend[B](e: Expr[B])(using Quotes, Type[A], Type[B]): Expr[A] =
+      '{ $e; $self }
+
+    def prependPrintln(msg: String)(using Quotes, Type[A]): Expr[A] =
+      prependPrintln(Expr.inlineConst(msg))
+
+    def prependPrintln(msg: Expr[String])(using Quotes, Type[A]): Expr[A] =
+      prepend('{ println($msg) })
   }
+
+  // ===================================================================================================================
+
+  extension [A, Z] (self: Expr[A => Z])
+    def apply(a: Expr[A])(using Quotes, Type[A], Type[Z]): Expr[Z] =
+      Expr.betaReduce('{ $self($a) })
+
+  extension [A, B, Z] (self: Expr[(A, B) => Z])
+    def apply(a: Expr[A], b: Expr[B])(using Quotes, Type[A], Type[B], Type[Z]): Expr[Z] =
+      Expr.betaReduce('{ $self($a, $b) })
+
+  extension [A, B, C, Z] (self: Expr[(A, B, C) => Z])
+    def apply(a: Expr[A], b: Expr[B], c: Expr[C])(using Quotes, Type[A], Type[B], Type[C], Type[Z]): Expr[Z] =
+      Expr.betaReduce('{ $self($a, $b, $c) })
+
+  extension [A, B, C, D, Z] (self: Expr[(A, B, C, D) => Z])
+    def apply(a: Expr[A], b: Expr[B], c: Expr[C], d: Expr[D])(using Quotes, Type[A], Type[B], Type[C], Type[D], Type[Z]): Expr[Z] =
+      Expr.betaReduce('{ $self($a, $b, $c, $d) })
+
+  extension [A, B, C, D, E, Z] (self: Expr[(A, B, C, D, E) => Z])
+    def apply(a: Expr[A], b: Expr[B], c: Expr[C], d: Expr[D], e: Expr[E])(using Quotes, Type[A], Type[B], Type[C], Type[D], Type[E], Type[Z]): Expr[Z] =
+      Expr.betaReduce('{ $self($a, $b, $c, $d, $e) })
 
   // ===================================================================================================================
   extension [F[_], A] (self: Expr[F[A]]) {

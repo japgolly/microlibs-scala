@@ -9,7 +9,6 @@ object MacroUtils:
 
   export japgolly.microlibs.macro_utils.{
     CachedGivens,
-    ExprSet,
     NewInstance,
   }
 
@@ -48,6 +47,12 @@ object MacroUtils:
 
   def mkArrayExprF[F[_]: Type, A](as: Seq[Expr[F[A]]])(using Quotes): Expr[Array[F[Any]]] =
     mkArrayExpr[F[Any]](as.map(_.asExprOfFAny))
+
+  def mkVectorExpr[A: Type](as: Seq[Expr[A]])(using Quotes): Expr[Vector[A]] =
+    '{ Vector(${Varargs(as)}: _*) }
+
+  def mkVectorExprF[F[_]: Type, A](as: Seq[Expr[F[A]]])(using Quotes): Expr[Vector[F[Any]]] =
+    mkVectorExpr[F[Any]](as.map(_.asExprOfFAny))
 
   // def needMirrorSumOf[A: Type](using Quotes): Expr[Mirror.SumOf[A]] =
   //   Expr.summon[Mirror.Of[A]] match

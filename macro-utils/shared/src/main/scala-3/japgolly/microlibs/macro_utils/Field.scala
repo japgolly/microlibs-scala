@@ -2,6 +2,7 @@ package japgolly.microlibs.macro_utils
 
 import scala.deriving.*
 import scala.quoted.*
+import MacroEnv.*
 
 trait Field {
   type Name
@@ -22,6 +23,9 @@ trait Field {
 }
 
 object Fields {
+
+  def summonFromMirror[A: Type](using Quotes): List[Field] =
+    fromMirror(Expr.summonOrError[Mirror.Of[A]])
 
   def fromMirror[A: Type](m: Expr[Mirror.Of[A]])(using Quotes): List[Field] = {
     import quotes.reflect.*
