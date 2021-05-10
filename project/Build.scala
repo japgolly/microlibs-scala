@@ -159,6 +159,7 @@ object Microlibs {
   lazy val stdlibExt = crossProject(JVMPlatform, JSPlatform)
     .in(file("stdlib-ext"))
     .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings, useTestUtil)
+    .configure(disableScalaDoc3)
     .settings(
       moduleName := "stdlib-ext",
       libraryDependencies ++= Seq(
