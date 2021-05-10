@@ -20,11 +20,13 @@ trait PlatformSpecificEscapeUtils { self: EscapeUtils.type =>
     sb.append('"')
     appendEscaped(sb, s)
     sb.append('"')
+    ()
   }
   override def appendQuoted(sb: StringBuilder, s: String): Unit = {
     sb.append('"')
     appendEscaped(sb, s)
     sb.append('"')
+    ()
   }
 
   override def escape(s: String): String = {
