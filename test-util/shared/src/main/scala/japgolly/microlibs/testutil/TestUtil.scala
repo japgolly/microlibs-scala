@@ -319,25 +319,76 @@ trait TestUtilWithoutUnivEq
     if (actual != expect)
       _assertSeqIgnoreOrderO("assertSet")(name, actual, expect)
 
-  def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
-    _assertContains("assertContainsCI", actual.toLowerCase, substr.toLowerCase, true)
+  private def ci(s: String): String = s.toLowerCase
+  private def ci(s: Set[String]): Set[String] = s.map(ci(_))
 
   def assertContains(actual: String, substr: String)(implicit q: Line): Unit =
     _assertContains("assertContains", actual, substr, true)
 
-  def assertNotContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
-    _assertContains("assertNotContainsCI", actual.toLowerCase, substr.toLowerCase, false)
+  def assertContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertContainsCI", ci(actual), ci(substr), true)
 
   def assertNotContains(actual: String, substr: String)(implicit q: Line): Unit =
     _assertContains("assertNotContains", actual, substr, false)
 
+  def assertNotContainsCI(actual: String, substr: String)(implicit q: Line): Unit =
+    _assertContains("assertNotContainsCI", ci(actual), ci(substr), false)
+
   private def _assertContains(method: String, actual: String, substr: String, expect: Boolean)(implicit q: Line): Unit =
     if (actual.contains(substr) != expect) {
       printFail2(Some(method))(
-        "substr", if (expect) BRIGHT_CYAN else BOLD_BRIGHT_BLUE, substr)(
+        "substr", _assertContainSubstrColour(expect), substr)(
         "actual", BOLD_BRIGHT_RED, actual)
       fail(s"$method failed.")
     }
+
+  private def _assertContainSubstrColour(expect: Boolean): String =
+    if (expect) BRIGHT_CYAN else BOLD_BRIGHT_BLUE
+
+  def assertContainsAny(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertContainsAny", actual, substrs.toSet, ∃ = true, expect = true)
+
+  def assertContainsAll(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertContainsAll", actual, substrs.toSet, ∃ = false, expect = true)
+
+  def assertNotContainsAny(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertNotContainsAny", actual, substrs.toSet, ∃ = true, expect = false)
+
+  def assertNotContainsAll(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertNotContainsAll", actual, substrs.toSet, ∃ = false, expect = false)
+
+  def assertContainsAnyCI(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertContainsAnyCI", ci(actual), ci(substrs.toSet), ∃ = true, expect = true)
+
+  def assertContainsAllCI(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertContainsAllCI", ci(actual), ci(substrs.toSet), ∃ = false, expect = true)
+
+  def assertNotContainsAnyCI(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertNotContainsAnyCI", ci(actual), ci(substrs.toSet), ∃ = true, expect = false)
+
+  def assertNotContainsAllCI(actual: String, substrs: String*)(implicit q: Line): Unit =
+    _assertContainsSet("assertNotContainsAllCI", ci(actual), ci(substrs.toSet), ∃ = false, expect = false)
+
+  private def _assertContainsSet(method: String, actual: String, substrs: Set[String], ∃ : Boolean, expect: Boolean)(implicit q: Line): Unit = {
+    val result =
+      if (∃)
+        substrs.exists(actual.contains)
+      else
+        substrs.forall(actual.contains)
+    if (result != expect) {
+      def substrToLine(s: String) = {
+        var l = s.replace("\n", "\\n")
+        val limit = 100
+        if (l.length > limit) l = l.take(limit) + "…"
+        l
+      }
+      val substrDesc = substrs.map(substrToLine).toList.sorted.mkString("\n")
+      printFail2(Some(method))(
+        "substrs", _assertContainSubstrColour(expect), substrDesc)(
+        "actual", BOLD_BRIGHT_RED, actual)
+      fail(s"$method failed.")
+    }
+  }
 
   def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
     assertChangeO(None, query, block)(actual)(expect)
