@@ -5,51 +5,54 @@ import MacroEnv.*
 
 object CompileTimeInfo {
 
-  inline def envVar(inline name: String): Option[String] =
-    ${ _envVar('name) }
+  transparent inline def envVar(inline name: String): Option[String] =
+    ${ quoted.envVar('name) }
 
-  inline def sysProp(inline name: String): Option[String] =
-    ${ _sysProp('name) }
+  transparent inline def sysProp(inline name: String): Option[String] =
+    ${ quoted.sysProp('name) }
 
-  inline def envVarOrSysProp(inline name: String): Option[String] =
-    ${ _envVarOrSysProp('name) }
+  transparent inline def envVarOrSysProp(inline name: String): Option[String] =
+    ${ quoted.envVarOrSysProp('name) }
 
-  inline def sysPropOrEnvVar(inline name: String): Option[String] =
-    ${ _sysPropOrEnvVar('name) }
+  transparent inline def sysPropOrEnvVar(inline name: String): Option[String] =
+    ${ quoted.sysPropOrEnvVar('name) }
 
   // ===================================================================================================================
 
-  private def getEnvVar(key: String): Option[String] =
-    Option(System.getenv(key))
+  object quoted {
 
-  private def getSysProp(key: String): Option[String] =
-    Option(System.getProperty(key, null))
+    private def getEnvVar(key: String): Option[String] =
+      Option(System.getenv(key))
 
-  private def _envVar(name: Expr[String])(using Quotes): Expr[Option[String]] = {
-    import quotes.reflect.*
-    val key = name.valueOrError
-    val value = getEnvVar(key)
-    Expr(value)
-  }
+    private def getSysProp(key: String): Option[String] =
+      Option(System.getProperty(key, null))
 
-  private def _sysProp(name: Expr[String])(using Quotes): Expr[Option[String]] = {
-    import quotes.reflect.*
-    val key = name.valueOrError
-    val value = getSysProp(key)
-    Expr(value)
-  }
+    def envVar(name: Expr[String])(using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+      val key = name.valueOrError
+      val value = getEnvVar(key)
+      Expr(value)
+    }
 
-  private def _envVarOrSysProp(name: Expr[String])(using Quotes): Expr[Option[String]] = {
-    import quotes.reflect.*
-    val key = name.valueOrError
-    val value = getEnvVar(key) orElse getSysProp(key)
-    Expr(value)
-  }
+    def sysProp(name: Expr[String])(using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+      val key = name.valueOrError
+      val value = getSysProp(key)
+      Expr(value)
+    }
 
-  private def _sysPropOrEnvVar(name: Expr[String])(using Quotes): Expr[Option[String]] = {
-    import quotes.reflect.*
-    val key = name.valueOrError
-    val value = getSysProp(key) orElse getEnvVar(key)
-    Expr(value)
+    def envVarOrSysProp(name: Expr[String])(using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+      val key = name.valueOrError
+      val value = getEnvVar(key) orElse getSysProp(key)
+      Expr(value)
+    }
+
+    def sysPropOrEnvVar(name: Expr[String])(using Quotes): Expr[Option[String]] = {
+      import quotes.reflect.*
+      val key = name.valueOrError
+      val value = getSysProp(key) orElse getEnvVar(key)
+      Expr(value)
+    }
   }
 }
