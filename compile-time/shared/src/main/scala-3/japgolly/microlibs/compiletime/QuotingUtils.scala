@@ -1,5 +1,6 @@
 package japgolly.microlibs.compiletime
 
+import java.util.regex.Pattern
 import scala.quoted.*
 import MacroEnv.*
 
@@ -44,6 +45,37 @@ object QuotingUtils:
           case _: Throwable => fail(s"Can't convert \"$s\" to an Int")
       case None =>
         '{ $str.toInt }
+
+  def toLong(str: Expr[String])(using Quotes): Expr[Long] =
+    str.value match
+      case Some(s) =>
+        try
+          Expr.inlineConst(s.toLong)
+        catch
+          case _: Throwable => fail(s"Can't convert \"$s\" to a Long")
+      case None =>
+        '{ $str.toLong }
+
+  def toBoolean(str: Expr[String])(using Quotes): Expr[Boolean] =
+    str.value match
+      case Some(s) =>
+        try
+          Expr.inlineConst(parseBooleanOrThrow(s))
+        catch
+          case t: Throwable => fail(t.getMessage)
+      case None =>
+        '{ parseBooleanOrThrow($str) }
+
+  private val RegexTrue = Pattern.compile("^(?:t(?:rue)?|y(?:es)?|1|on|enabled?)$", Pattern.CASE_INSENSITIVE)
+  private val RegexFalse = Pattern.compile("^(?:f(?:alse)?|n(?:o)?|0|off|disabled?)$", Pattern.CASE_INSENSITIVE)
+
+  def parseBooleanOrThrow(s: String): Boolean =
+    if (RegexTrue.matcher(s).matches)
+      true
+    else if (RegexFalse.matcher(s).matches)
+      false
+    else
+      throw new RuntimeException(s"Can't parse \"$s\" as a Boolean")
 
   def showCode(e: Expr[Any])(using Quotes): Expr[String] =
     import quotes.reflect.*

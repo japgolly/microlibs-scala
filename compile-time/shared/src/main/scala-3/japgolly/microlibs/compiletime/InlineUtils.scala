@@ -23,6 +23,12 @@ object InlineUtils:
   transparent inline def toInt(str: String): Int =
     ${ QuotingUtils.toInt('str) }
 
+  transparent inline def toLong(str: String): Long =
+    ${ QuotingUtils.toLong('str) }
+
+  transparent inline def toBoolean(str: String): Boolean =
+    ${ QuotingUtils.toBoolean('str) }
+
   transparent inline def showCode(inline body: Any): String =
     ${ QuotingUtils.showCode('body) }
 
