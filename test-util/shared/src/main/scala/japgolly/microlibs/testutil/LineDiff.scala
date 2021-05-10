@@ -61,16 +61,16 @@ object LineDiff {
     lazy val diffColoured: String =
       diffCustom (
         equalPrefix = BRIGHT_BLACK + " ",
-        delPrefix   = BOLD_BRIGHT_RED + "-",
-        addPrefix   = BOLD_BRIGHT_GREEN + "+",
+        delPrefix   = BOLD_BRIGHT_GREEN + "-",
+        addPrefix   = BOLD_BRIGHT_RED + "+",
         reset       = RESET,
       )
 
     lazy val expectActualColoured: String =
       diffCustom (
-        equalPrefix = BRIGHT_BLACK     + "  | ",
-        delPrefix   = BOLD_BRIGHT_RED  + "-e| ",
-        addPrefix   = BOLD_BRIGHT_CYAN + "+a| ",
+        equalPrefix = BRIGHT_BLACK      + "  | ",
+        delPrefix   = BOLD_BRIGHT_GREEN + "-e| ",
+        addPrefix   = BOLD_BRIGHT_RED   + "+a| ",
         reset       = RESET,
         modLine     = highlightTrailingWhitespace,
       )
