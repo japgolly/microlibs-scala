@@ -90,6 +90,6 @@ object Lib {
   def disableScalaDoc3: PE =
     _.settings(
       Compile / doc / sources                := { if (scalaVersion.value startsWith "3") Seq.empty else (Compile / doc / sources               ).value },
-      Compile / packageDoc / publishArtifact := { if (scalaVersion.value startsWith "3") false     else (Compile / packageDoc / publishArtifact).value },
+      // Compile / packageDoc / publishArtifact := { if (scalaVersion.value startsWith "3") false     else (Compile / packageDoc / publishArtifact).value },
     )
 }
