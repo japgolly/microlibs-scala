@@ -343,7 +343,7 @@ trait TestUtilWithoutUnivEq
     }
 
   private def _assertContainSubstrColour(expect: Boolean): String =
-    if (expect) BRIGHT_CYAN else BOLD_BRIGHT_BLUE
+    if (expect) BOLD_BRIGHT_GREEN else BOLD_BRIGHT_BLUE
 
   def assertContainsAny(actual: String, substrs: String*)(implicit q: Line): Unit =
     _assertContainsSet("assertContainsAny", actual, substrs.toSet, ∃ = true, expect = true)
