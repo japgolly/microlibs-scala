@@ -1,6 +1,6 @@
 package japgolly.microlibs.adt_macros
 
-import japgolly.microlibs.macro_utils.MacroUtils
+import japgolly.microlibs.macro_utils.MacroEnv.*
 import japgolly.microlibs.nonempty.{NonEmptySet, NonEmptyVector}
 import japgolly.univeq.UnivEq
 import scala.compiletime.*
@@ -8,8 +8,6 @@ import scala.deriving.*
 import scala.quoted.*
 
 object AdtMacros:
-  import MacroUtils.Ops.*
-  import MacroUtils.{logAll, fail}
 
   private def nonEmptyVector[A: Type](exprs: Seq[Expr[A]])(using Quotes): Expr[NonEmptyVector[A]] =
     val head = exprs.head
@@ -71,7 +69,7 @@ object AdtMacros:
 
     MacroUtils.withNonEmptySumTypeTypes(Type.of[A])([types] => (_: Type[types]) ?=> {
 
-      var seen = if allowDuplicateValues then null else MacroUtils.ExprSet.empty[A]
+      var seen = if allowDuplicateValues then null else ExprSet.empty[A]
       var map = MacroUtils.mapByFieldTypes[types, Option[Expr[A]]]([t] => (_: Type[t]) ?=> None)
       val keyList = map.keys.toList
 

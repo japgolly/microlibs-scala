@@ -1,11 +1,10 @@
 package japgolly.microlibs.scalaz_ext
 
-import japgolly.microlibs.macro_utils.MacroUtils
+import japgolly.microlibs.macro_utils.MacroEnv.*
 import scala.compiletime.*
 import scala.deriving.*
 import scala.quoted.*
 import scalaz.Equal
-import MacroUtils.Ops._
 
 object ScalazMacros:
 
@@ -31,13 +30,12 @@ object ScalazMacros:
 
     Expr.summon[Mirror.Of[A]] match
 
-      // Product
-      case Some('{ $m: Mirror.ProductOf[A] { type MirroredElemTypes = types } }) =>
-        result = MacroUtils.withCachedGivens[A, Equal, Equal[A]](m) { lookup =>
+      case Some('{ $m: Mirror.ProductOf[A] }) =>
+        result = MacroUtils.CachedGivens[Equal].mirror(m).summonGivens().use[Equal[A]] { ctx =>
 
           val clauses =
-            MacroUtils.mirrorFields(m).map[Clause](f => (x, y) => {
-              val eq = lookup(f)
+            ctx.fields.map[Clause](f => (x, y) => {
+              val eq = ctx.lookup(f).expr
               '{ $eq.equal(${f.onProduct(x)}, ${f.onProduct(y)}) }
             })
 
@@ -49,12 +47,11 @@ object ScalazMacros:
           )
         }
 
-      // Sum
-      case Some('{ $m: Mirror.SumOf[A] { type MirroredElemTypes = types } }) =>
-        result = MacroUtils.buidTypeClassForSum[Equal, A](m) { b =>
+      case Some('{ $m: Mirror.SumOf[A] }) =>
+        result = MacroUtils.CachedGivens[Equal].mirror(m).summonGivens().forSumType(m) { f =>
           newInstance { (x, y) => '{
-              val o = ${b.ordinal(x)}
-              (o == ${b.ordinal(y)}) && ${b.tc('o)}.equal($x, $y)
+              val o = ${f.ordinalOf(x)}
+              (o == ${f.ordinalOf(y)}) && ${f.typeclassForOrd('o)}.equal($x, $y)
             }
           }
         }

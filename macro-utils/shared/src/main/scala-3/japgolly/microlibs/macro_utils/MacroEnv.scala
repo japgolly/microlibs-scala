@@ -21,6 +21,7 @@ object MacroEnv {
     Field,
     Fields,
     Init,
+    MacroUtils,
   }
   export EasierValDef.*
 
