@@ -6,11 +6,8 @@ import scala.quoted.*
 object MacroEnvStatic {
   import MacroEnv.*
 
-  inline def inlineSummon[A]: A =
-    ${ _inlineSummon[A] }
-
-  def _inlineSummon[A: Type](using Quotes): Expr[A] =
-    Expr.summonOrError[A]
+  inline def summonLater[A]: A =
+    scala.compiletime.summonInline[A]
 }
 
 object MacroEnv {
@@ -38,8 +35,12 @@ object MacroEnv {
   // ===================================================================================================================
   extension (unused: Expr.type) {
 
+    /** Requires that macro be transparent.
+      *
+      * https://github.com/lampepfl/dotty/issues/12359
+      */
     def summonLater[A: Type](using Quotes): Expr[A] =
-      '{ MacroEnvStatic.inlineSummon[A] }
+      '{ MacroEnvStatic.summonLater[A] }
 
     def summonOrError[A](using Type[A])(using Quotes): Expr[A] =
       import quotes.reflect.*
