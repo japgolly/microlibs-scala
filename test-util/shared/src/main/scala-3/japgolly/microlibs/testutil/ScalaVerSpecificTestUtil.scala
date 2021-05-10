@@ -29,18 +29,10 @@ trait ScalaVerSpecificTestUtil {
   import TestUtil.*
 
   export InlineUtils.{
+    printCode,
+    printTasty,
     showCode,
     showTasty,
-  }
-
-  inline def printCode(inline body: Any): body.type = {
-    println(showCode(body))
-    body
-  }
-
-  inline def printTasty(inline body: Any): body.type = {
-    println(showTasty(body))
-    body
   }
 
   inline def assertTastyEq[A](inline actual: A, inline expect: A, inline show: Boolean = false): Unit =

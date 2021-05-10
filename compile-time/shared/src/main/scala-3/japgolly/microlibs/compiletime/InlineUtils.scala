@@ -34,3 +34,11 @@ object InlineUtils:
 
   transparent inline def showTasty(inline body: Any): String =
     ${ QuotingUtils.showTasty('body) }
+
+  inline def printCode(inline body: Any): body.type =
+    println(showCode(body))
+    body
+
+  inline def printTasty(inline body: Any): body.type =
+    println(showTasty(body))
+    body
