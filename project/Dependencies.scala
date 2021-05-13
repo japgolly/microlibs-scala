@@ -17,7 +17,7 @@ object Dependencies {
 
     // Internal
     val JAMM            = "0.3.3"
-    val KindProjector   = "0.11.3"
+    val KindProjector   = "0.12.0"
     val MTest           = "0.7.9"
     val Nyaya           = "0.10.0-RC2"
     val ScalaJsJavaTime = "1.0.0"
