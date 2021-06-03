@@ -8,18 +8,18 @@ object Dependencies {
 
     // Exported
     val Scala212        = "2.12.13"
-    val Scala213        = "2.13.5"
-    val Scala3          = "3.0.0-RC3"
-    val ScalaCollCompat = "2.4.3"
-    val Scalaz          = "7.2.31"
-    val SourceCode      = "0.2.6"
-    val UnivEq          = "1.4.0-RC4"
+    val Scala213        = "2.13.6"
+    val Scala3          = "3.0.0"
+    val ScalaCollCompat = "2.4.4"
+    val Scalaz          = "7.2.32"
+    val SourceCode      = "0.2.7"
+    val UnivEq          = "1.4.0"
 
     // Internal
     val JAMM            = "0.3.3"
     val KindProjector   = "0.11.3"
-    val MTest           = "0.7.9"
-    val Nyaya           = "0.10.0-RC2"
+    val MTest           = "0.7.10"
+    val Nyaya           = "0.10.0"
     val ScalaJsJavaTime = "1.0.0"
   }
 

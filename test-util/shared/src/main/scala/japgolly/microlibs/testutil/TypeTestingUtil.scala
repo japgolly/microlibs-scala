@@ -12,11 +12,15 @@ trait TypeTestingUtil {
   @nowarn("cat=unused")
   def assertTypeOf[A](a: => A): TypeTestingUtilDsl[A] =
     assertType[A]
+
+  @nowarn("cat=unused")
+  def assertTypeOfImplicit[A](implicit a: A): TypeTestingUtilDsl[a.type] =
+    assertType[a.type]
 }
 
 @nowarn("cat=unused")
 class TypeTestingUtilDsl[A] {
-  def apply[B](f: A => B): TypeTestingUtilDsl[B] =
+  def map[B](f: A => B): TypeTestingUtilDsl[B] =
     TypeTestingUtil.assertType[B]
 
   def is          [B](implicit ev: A =:= B): Unit = ()
