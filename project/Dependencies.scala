@@ -7,38 +7,38 @@ object Dependencies {
   object Ver {
 
     // Exported
-    val Scala212        = "2.12.13"
-    val Scala213        = "2.13.6"
-    val Scala3          = "3.0.0"
-    val ScalaCollCompat = "2.4.4"
-    val Scalaz          = "7.2.32"
-    val SourceCode      = "0.2.7"
-    val UnivEq          = "1.4.0"
+    val scala212        = "2.12.13"
+    val scala213        = "2.13.6"
+    val scala3          = "3.0.0"
+    val scalaCollCompat = "2.4.4"
+    val scalaz          = "7.2.32"
+    val sourceCode      = "0.2.7"
+    val univEq          = "1.4.0"
 
     // Internal
-    val JAMM            = "0.3.3"
-    val KindProjector   = "0.11.3"
-    val MTest           = "0.7.10"
-    val Nyaya           = "0.10.0"
-    val ScalaJsJavaTime = "1.0.0"
+    val jamm            = "0.3.3"
+    val kindProjector   = "0.11.3"
+    val nyaya           = "0.10.0"
+    val scalaJsJavaTime = "1.0.0"
+    val utest           = "0.7.10"
   }
 
   object Dep {
-    val JAMM            = Def.setting("com.github.jbellis"              % "jamm"                    % Ver.JAMM)
-    val MTest           = Def.setting("com.lihaoyi"                   %%% "utest"                   % Ver.MTest)
-    val NyayaGen        = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-gen"               % Ver.Nyaya)
-    val NyayaProp       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-prop"              % Ver.Nyaya)
-    val NyayaTest       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-test"              % Ver.Nyaya)
-    val ScalaCollCompat = Def.setting("org.scala-lang.modules"        %%% "scala-collection-compat" % Ver.ScalaCollCompat)
-    val ScalaCompiler   = Def.setting("org.scala-lang"                  % "scala-compiler"          % scalaVersion.value)
-    val ScalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.ScalaJsJavaTime cross CrossVersion.for3Use2_13)
-    val Scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.Scalaz cross CrossVersion.for3Use2_13)
-    val SourceCode      = Def.setting("com.lihaoyi"                   %%% "sourcecode"              % Ver.SourceCode)
-    val UnivEq          = Def.setting("com.github.japgolly.univeq"    %%% "univeq"                  % Ver.UnivEq)
-    val UnivEqScalaz    = Def.setting("com.github.japgolly.univeq"    %%% "univeq-scalaz"           % Ver.UnivEq)
+    val jamm            = Def.setting("com.github.jbellis"              % "jamm"                    % Ver.jamm)
+    val nyayaGen        = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-gen"               % Ver.nyaya)
+    val nyayaProp       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-prop"              % Ver.nyaya)
+    val nyayaTest       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-test"              % Ver.nyaya)
+    val scalaCollCompat = Def.setting("org.scala-lang.modules"        %%% "scala-collection-compat" % Ver.scalaCollCompat)
+    val scalaCompiler   = Def.setting("org.scala-lang"                  % "scala-compiler"          % scalaVersion.value)
+    val scalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.scalaJsJavaTime cross CrossVersion.for3Use2_13)
+    val scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.scalaz cross CrossVersion.for3Use2_13)
+    val sourceCode      = Def.setting("com.lihaoyi"                   %%% "sourcecode"              % Ver.sourceCode)
+    val univEq          = Def.setting("com.github.japgolly.univeq"    %%% "univeq"                  % Ver.univEq)
+    val univEqScalaz    = Def.setting("com.github.japgolly.univeq"    %%% "univeq-scalaz"           % Ver.univEq)
+    val utest           = Def.setting("com.lihaoyi"                   %%% "utest"                   % Ver.utest)
 
     // Compiler plugins
-    val KindProjector = compilerPlugin("org.typelevel" %% "kind-projector" % Ver.KindProjector cross CrossVersion.full)
+    val kindProjector = compilerPlugin("org.typelevel" %% "kind-projector" % Ver.kindProjector cross CrossVersion.full)
   }
 
 }
