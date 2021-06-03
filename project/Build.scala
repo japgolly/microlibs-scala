@@ -89,13 +89,33 @@ object Microlibs {
     Project("JVM", file(".rootJVM"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJVM, compileTimeJVM, nameFnJVM, nonemptyJVM, recursionJVM, scalazExtJVM, stdlibExtJVM, testUtilJVM, utilsJVM)
+        adtMacrosJVM,
+        compileTimeJVM,
+        nameFnJVM,
+        nonemptyJVM,
+        recursionJVM,
+        scalazExtJVM,
+        stdlibExtJVM,
+        testUtilJVM,
+        typesJVM,
+        utilsJVM,
+      )
 
   lazy val rootJS =
     Project("JS", file(".rootJS"))
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
-        adtMacrosJS, compileTimeJS, nameFnJS, nonemptyJS, recursionJS, scalazExtJS, stdlibExtJS, testUtilJS, utilsJS)
+        adtMacrosJS,
+        compileTimeJS,
+        nameFnJS,
+        nonemptyJS,
+        recursionJS,
+        scalazExtJS,
+        stdlibExtJS,
+        testUtilJS,
+        typesJS,
+        utilsJS,
+      )
 
   // ===================================================================================================================
 
@@ -182,6 +202,12 @@ object Microlibs {
         Dep.univEq      .value,
         Dep.univEqScalaz.value,
       ))
+
+  lazy val typesJVM = types.jvm
+  lazy val typesJS  = types.js
+  lazy val types = crossProject(JVMPlatform, JSPlatform)
+    .configureCross(commonSettings, publicationSettings, utestSettings)
+    .dependsOn(testUtil % "test->compile")
 
   lazy val utilsJVM = utils.jvm
   lazy val utilsJS  = utils.js

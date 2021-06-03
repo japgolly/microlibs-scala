@@ -22,6 +22,9 @@ class TypeTestingUtilDsl[A] {
   def map[B](f: A => B): TypeTestingUtilDsl[B] =
     TypeTestingUtil.assertType[B]
 
+  def map[F[_]]: TypeTestingUtilDsl[F[A]] =
+    TypeTestingUtil.assertType[F[A]]
+
   def is          [B](implicit ev: A =:= B): Unit = ()
   def is_<        [B](implicit ev: A <:< B): Unit = ()
   def is_>        [B](implicit ev: B <:< A): Unit = ()
