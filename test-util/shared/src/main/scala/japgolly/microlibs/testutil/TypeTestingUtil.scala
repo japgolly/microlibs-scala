@@ -13,7 +13,6 @@ trait TypeTestingUtil {
   def assertTypeOf[A](a: => A): TypeTestingUtilDsl[A] =
     assertType[A]
 
-  @nowarn("cat=unused")
   def assertTypeOfImplicit[A](implicit a: A): TypeTestingUtilDsl[a.type] =
     assertType[a.type]
 }
