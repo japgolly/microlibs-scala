@@ -109,7 +109,10 @@ object MacroEnv {
 
     def inlined(using Quotes, Type[A]): Expr[A] =
       import quotes.reflect.*
-      Inlined(None, Nil, self.asTerm).asExprOf[A]
+      self.asTerm match {
+        case _: Inlined => self
+        case term       => Inlined(None, Nil, term).asExprOf[A]
+      }
 
     def showType(using Quotes): String =
       import quotes.reflect.*
