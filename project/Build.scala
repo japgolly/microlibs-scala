@@ -46,7 +46,7 @@ object Microlibs {
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion                  := Ver.scala3,
-      crossScalaVersions            := Seq(Ver.scala213, Ver.scala3),
+      crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
       scalacOptions                ++= scalacCommonFlags,
       scalacOptions                ++= byScalaVersion {
                                          case (2, _) => scalac2Flags

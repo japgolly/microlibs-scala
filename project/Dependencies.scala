@@ -7,7 +7,7 @@ object Dependencies {
   object Ver {
 
     // Exported
-    val scala213        = "2.13.6"
+    val scala2          = "2.13.6"
     val scala3          = "3.0.0"
     val scalaCollCompat = "2.4.4"
     val scalaz          = "7.2.32"
