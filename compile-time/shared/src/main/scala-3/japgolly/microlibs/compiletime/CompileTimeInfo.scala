@@ -35,6 +35,39 @@ object CompileTimeInfo {
 
   // ===================================================================================================================
 
+  object nonTransparent {
+
+    // Null versions
+
+    inline def envVarOrNull(inline key: String): String =
+      ${ quoted.envVarOrNull('key) }
+
+    inline def sysPropOrNull(inline key: String): String =
+      ${ quoted.sysPropOrNull('key) }
+
+    inline def envVarOrSysPropOrNull(inline key: String): String =
+      ${ quoted.envVarOrSysPropOrNull('key) }
+
+    inline def sysPropOrEnvVarOrNull(inline key: String): String =
+      ${ quoted.sysPropOrEnvVarOrNull('key) }
+
+    // Option versions
+
+    inline def envVar(inline key: String): Option[String] =
+      ${ quoted.envVar('key) }
+
+    inline def sysProp(inline key: String): Option[String] =
+      ${ quoted.sysProp('key) }
+
+    inline def envVarOrSysProp(inline key: String): Option[String] =
+      ${ quoted.envVarOrSysProp('key) }
+
+    inline def sysPropOrEnvVar(inline key: String): Option[String] =
+      ${ quoted.sysPropOrEnvVar('key) }
+  }
+
+  // ===================================================================================================================
+
   object quoted {
 
     private def getEnvVar(key: String): Option[String] =
