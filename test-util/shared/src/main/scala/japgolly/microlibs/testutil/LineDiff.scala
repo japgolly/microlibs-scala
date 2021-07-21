@@ -1,8 +1,8 @@
 package japgolly.microlibs.testutil
 
 import japgolly.microlibs.testutil.TestUtilInternals._
-import scala.collection.immutable.HashMap
 import scala.Console._
+import scala.collection.immutable.HashMap
 
 /* Copyright (c) 2011, Owen Stephens
  * All rights reserved.

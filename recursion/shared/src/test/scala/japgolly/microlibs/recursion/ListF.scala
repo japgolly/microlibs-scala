@@ -1,6 +1,6 @@
 package japgolly.microlibs.recursion
 
-import scalaz.{Functor, ~>}
+import cats.{Functor, ~>}
 
 sealed trait ListF[+A, +F]
 case class ConsF[+A, +F](head: A, tail: F) extends ListF[A, F]

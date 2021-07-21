@@ -1,8 +1,7 @@
 package japgolly.microlibs.name_fn
 
+import japgolly.microlibs.name_fn.Name.Implicits._
 import utest._
-
-import Name.Implicits._
 
 object NameTest extends TestSuite {
 

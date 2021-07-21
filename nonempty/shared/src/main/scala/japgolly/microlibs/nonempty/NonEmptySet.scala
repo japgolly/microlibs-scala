@@ -1,9 +1,9 @@
 package japgolly.microlibs.nonempty
 
+import cats.Semigroup
 import japgolly.univeq.UnivEq
-import scala.collection.compat._
-import scalaz.Semigroup
 import scala.annotation.nowarn
+import scala.collection.Factory
 
 /**
  * @param tail Does NOT contain head.
@@ -135,7 +135,7 @@ object NonEmptySet {
 
   implicit def semigroup[A]: Semigroup[NonEmptySet[A]] =
     new Semigroup[NonEmptySet[A]] {
-      override def append(a: NonEmptySet[A], b: => NonEmptySet[A]): NonEmptySet[A] = a ++ b
+      override def combine(a: NonEmptySet[A], b: NonEmptySet[A]) = a ++ b
     }
 
   object Sole {

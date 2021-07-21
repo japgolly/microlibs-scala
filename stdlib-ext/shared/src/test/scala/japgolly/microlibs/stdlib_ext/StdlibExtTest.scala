@@ -1,7 +1,7 @@
 package japgolly.microlibs.stdlib_ext
 
-import utest._
 import java.time.Duration
+import utest._
 
 object StdlibExtTest extends TestSuite {
   import StdlibExt._

@@ -1,7 +1,6 @@
 package japgolly.microlibs.types
 
 import japgolly.microlibs.testutil.TestUtil._
-import utest._
 
 object NaturalCompositionTest {
   import NaturalComposition.{Merge, Split}

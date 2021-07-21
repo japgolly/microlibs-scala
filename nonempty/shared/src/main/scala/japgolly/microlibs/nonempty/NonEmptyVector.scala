@@ -1,13 +1,12 @@
 package japgolly.microlibs.nonempty
 
+import cats.instances.vector.{catsKernelStdEqForVector, catsKernelStdOrderForVector}
+import cats.{NonEmptyTraverse, _}
 import japgolly.univeq.UnivEq
-import scala.collection.AbstractIterator
-import scala.collection.compat._
-import scala.collection.immutable.Range
-import scala.math.Ordering
-import scalaz._
-import scalaz.std.vector.{vectorEqual, vectorOrder}
 import scala.annotation.nowarn
+import scala.collection.immutable.Range
+import scala.collection.{AbstractIterator, Factory}
+import scala.math.Ordering
 
 final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   override def toString = "NonEmpty" + whole.toString
@@ -164,17 +163,17 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   def sortBy[B](f: A => B)(implicit ord: Ordering[B]) = safeTrans(_ sortBy f)
   def sortWith(lt: (A, A) => Boolean)                 = safeTrans(_ sortWith lt)
 
-  def partitionD[B, C](f: A => B \/ C): (NonEmptyVector[B], Vector[C]) \/ (Vector[B], NonEmptyVector[C]) = {
+  def partitionD[B, C](f: A => Either[B, C]): Either[(NonEmptyVector[B], Vector[C]), (Vector[B], NonEmptyVector[C])] = {
     var bs = Vector.empty[B]
     var cs = Vector.empty[C]
     for (a <- tail)
       f(a) match {
-        case -\/(b) => bs :+= b
-        case \/-(c) => cs :+= c
+        case Left(b) => bs :+= b
+        case Right(c) => cs :+= c
       }
     f(head) match {
-      case -\/(b) => -\/((NonEmptyVector(b, bs), cs))
-      case \/-(c) => \/-((bs, NonEmptyVector(c, cs)))
+      case Left(b) => Left((NonEmptyVector(b, bs), cs))
+      case Right(c) => Right((bs, NonEmptyVector(c, cs)))
     }
   }
 
@@ -303,33 +302,37 @@ object NonEmptyVector extends NonEmptyVectorImplicits0 {
 
   implicit def semigroup[A]: Semigroup[NonEmptyVector[A]] =
     new Semigroup[NonEmptyVector[A]] {
-      override def append(a: NonEmptyVector[A], b: => NonEmptyVector[A]): NonEmptyVector[A] = a ++ b
+      override def combine(a: NonEmptyVector[A], b: NonEmptyVector[A]) = a ++ b
     }
 
-  implicit def traverse1: Traverse1[NonEmptyVector] = new Traverse1[NonEmptyVector] {
+  implicit def nonEmptyTraverse: NonEmptyTraverse[NonEmptyVector] = new NonEmptyTraverse[NonEmptyVector] {
+
     override def foldLeft[A, B](fa: NonEmptyVector[A], z: B)(f: (B, A) => B): B =
       fa.foldLeft(z)(f)
 
-    override def foldMapRight1[A, B](fa: NonEmptyVector[A])(z: A => B)(f: (A, => B) => B): B =
-      fa.init.reverseIterator.foldLeft(z(fa.last))((b, a) => f(a, b))
+    override def reduceLeftTo[A, B](fa: NonEmptyVector[A])(f: A => B)(g: (B, A) => B): B =
+      fa.tail.foldLeft(f(fa.head))(g)
 
-    override def index[A](fa: NonEmptyVector[A], i: Int): Option[A] =
-      fa(i)
+    override def foldRight[A, B](fa: NonEmptyVector[A], lb: Eval[B])(f: (A, Eval[B]) => Eval[B]): Eval[B] =
+      fa.whole.reverseIterator.foldLeft(lb)((b, a) => f(a, b))
 
-    override def length[A](fa: NonEmptyVector[A]) =
+    override def reduceRightTo[A, B](fa: NonEmptyVector[A])(f: A => B)(g: (A, Eval[B]) => Eval[B]): Eval[B] =
+      fa.init.reverseIterator.foldLeft(Eval.later(f(fa.last)))((b, a) => g(a, b))
+
+    override def size[A](fa: NonEmptyVector[A]) =
       fa.length
 
     override def map[A, B](fa: NonEmptyVector[A])(f: A => B): NonEmptyVector[B] =
       fa map f
 
-    override def traverse1Impl[G[_], A, B](fa: NonEmptyVector[A])(f: A => G[B])(implicit ap: Apply[G]): G[NonEmptyVector[B]] = {
+    override def nonEmptyTraverse[G[_], A, B](fa: NonEmptyVector[A])(f: A => G[B])(implicit ap: Apply[G]): G[NonEmptyVector[B]] = {
       val gh = f(fa.head)
       if (fa.tail.isEmpty)
         ap.map(gh)(one)
       else {
         val gz = ap.map(gh)(_ => Vector.empty[B])
-        val gt = fa.tail.foldLeft(gz)((q, a) => ap.apply2(q, f(a))(_ :+ _))
-        ap.apply2(gh, gt)(new NonEmptyVector(_, _))
+        val gt = fa.tail.foldLeft(gz)((q, a) => ap.map2(q, f(a))(_ :+ _))
+        ap.map2(gh, gt)(new NonEmptyVector(_, _))
       }
     }
   }
@@ -345,10 +348,10 @@ object NonEmptyVector extends NonEmptyVectorImplicits0 {
 
 trait NonEmptyVectorImplicits1 {
   implicit def order[A: Order]: Order[NonEmptyVector[A]] =
-    vectorOrder[A].contramap(_.whole)
+    Order.by(_.whole)
 }
 
 trait NonEmptyVectorImplicits0 extends NonEmptyVectorImplicits1 {
-  implicit def equality[A: Equal]: Equal[NonEmptyVector[A]] =
-    vectorEqual[A].contramap(_.whole)
+  implicit def equality[A: Eq]: Eq[NonEmptyVector[A]] =
+    Eq.by(_.whole)
 }

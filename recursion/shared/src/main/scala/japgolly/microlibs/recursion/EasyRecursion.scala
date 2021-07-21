@@ -1,6 +1,6 @@
 package japgolly.microlibs.recursion
 
-import scalaz.{Functor, Monad, Traverse}
+import cats.{Functor, Monad, Traverse}
 
 /**
   * Beginner-friendly. No Greek.

@@ -1,6 +1,6 @@
 package japgolly.microlibs.recursion
 
-import scalaz.{Functor, Monad, Traverse}
+import cats.{Functor, Monad, Traverse}
 
 /** Useful for situations where composite items need to be wrapped when nested, but not at the top level.
   *

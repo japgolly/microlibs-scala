@@ -2,7 +2,7 @@ package japgolly.microlibs.stdlib_ext
 
 import japgolly.microlibs.testutil.TestUtil._
 import java.lang.{StringBuilder => JStringBuilder}
-import nyaya.gen.Gen
+import scala.util.Random
 import sourcecode.Line
 import utest._
 
@@ -30,7 +30,7 @@ object EscapeUtilsTest extends TestSuite {
         "asciiMid" - {
           val exclude = "\\\"".toCharArray()
           val chars = (32 to 126).map(_.toChar).filterNot(exclude.contains).toVector
-          test(Gen.shuffle(chars).sample().mkString)
+          test(Random.shuffle(chars).mkString)
         }
       }
       "needed" - {
@@ -42,9 +42,10 @@ object EscapeUtilsTest extends TestSuite {
         }
         "asciiHi" - {
           val chars = (127 to 255).map(_.toChar).toVector
-          test(Gen.shuffle(chars).sample().mkString)
+          test(Random.shuffle(chars).mkString)
         }
-        "unicode" - test(Gen.unicode.map(c => if (c < 256) (c + 1000).toChar else c).string(128).sample())
+        // "unicode" - test(Gen.unicode.map(c => if (c < 256) (c + 1000).toChar else c).string(128).sample())
+        "unicode" - test("もうどうでもいいや")
       }
     }
 

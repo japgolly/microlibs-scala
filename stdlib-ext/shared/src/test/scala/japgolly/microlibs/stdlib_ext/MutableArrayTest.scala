@@ -1,6 +1,5 @@
 package japgolly.microlibs.stdlib_ext
 
-import scala.collection.compat._
 import utest._
 
 object MutableArrayTest extends TestSuite {

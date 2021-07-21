@@ -1,7 +1,6 @@
 package japgolly.microlibs.compiletime
 
 import scala.annotation.tailrec
-import scala.collection.compat._
 import sourcecode.Line
 
 object MacroUtils {

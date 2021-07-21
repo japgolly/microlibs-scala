@@ -2,6 +2,7 @@ package japgolly.microlibs.stdlib_ext
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.{Factory, View}
+import scala.collection.Factory
 
 /**
   * Scala arrays don't support in-place modification.

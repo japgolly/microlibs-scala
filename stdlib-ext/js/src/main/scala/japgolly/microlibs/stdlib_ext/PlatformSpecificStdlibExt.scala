@@ -1,6 +1,6 @@
 package japgolly.microlibs.stdlib_ext
 
-import scalajs.js
+import scala.scalajs.js
 
 /*
   +----+

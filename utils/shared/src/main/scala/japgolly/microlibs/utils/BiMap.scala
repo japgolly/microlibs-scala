@@ -1,9 +1,8 @@
 package japgolly.microlibs.utils
 
 import japgolly.univeq.UnivEq
-import scala.collection.compat._
-import scala.collection.immutable.IntMap
 import scala.annotation.nowarn
+import scala.collection.immutable.IntMap
 
 /**
  * Bidirectional maps between values of two key types.

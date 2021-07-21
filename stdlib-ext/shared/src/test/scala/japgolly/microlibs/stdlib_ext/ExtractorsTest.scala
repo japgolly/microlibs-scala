@@ -6,7 +6,7 @@ import utest._
 
 object ExtractorsTest extends TestSuite {
   // TODO Workaround for https://github.com/lampepfl/dotty/issues/11798
-  import japgolly.microlibs.testutil.TestUtil.scalazEqualFromUnivEq
+  import japgolly.microlibs.testutil.TestUtil.catsEqFromUnivEq
 
   override def tests = Tests {
 

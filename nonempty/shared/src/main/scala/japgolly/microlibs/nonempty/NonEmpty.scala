@@ -1,7 +1,7 @@
 package japgolly.microlibs.nonempty
 
+import cats.Eq
 import japgolly.univeq.UnivEq
-import scalaz.Equal
 import scala.annotation.nowarn
 
 /**
@@ -27,8 +27,8 @@ object NonEmpty {
   @inline implicit def nonEmptyUnivEq[A: UnivEq]: UnivEq[NonEmpty[A]] =
     UnivEq.force
 
-  @inline def nonEmptyEqual[A](implicit e: Equal[A]): Equal[NonEmpty[A]] =
-    e.contramap(_.value)
+  @inline def nonEmptyEqual[A](implicit e: Eq[A]): Eq[NonEmpty[A]] =
+    Eq.by(_.value)
 
   @inline def force[A](a: A): NonEmpty[A] =
     new NonEmpty(a)

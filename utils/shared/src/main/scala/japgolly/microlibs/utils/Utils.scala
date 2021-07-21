@@ -3,7 +3,6 @@ package japgolly.microlibs.utils
 import japgolly.microlibs.stdlib_ext.StdlibExt._
 import japgolly.univeq.UnivEq
 import java.time.{Duration, Instant}
-import scala.collection.compat._
 import scala.annotation.nowarn
 
 object Utils {

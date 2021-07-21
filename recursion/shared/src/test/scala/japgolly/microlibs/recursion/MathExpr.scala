@@ -1,6 +1,6 @@
 package japgolly.microlibs.recursion
 
-import scalaz.{Functor, ~>}
+import cats.{Functor, ~>}
 
 sealed abstract class MathExpr[+A]
 object MathExpr {

@@ -1,9 +1,9 @@
 package japgolly.microlibs.adt_macros
 
-import scala.reflect.macros.blackbox
+import japgolly.microlibs.adt_macros.AdtMacros.{AdtIso, AdtIsoSet}
 import japgolly.microlibs.compiletime.MacroUtils
 import japgolly.microlibs.nonempty.{NonEmptySet, NonEmptyVector}
-import AdtMacros.{AdtIso, AdtIsoSet}
+import scala.reflect.macros.blackbox
 
 object AdtMacros {
 

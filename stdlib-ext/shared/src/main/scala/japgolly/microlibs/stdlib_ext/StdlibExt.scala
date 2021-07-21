@@ -4,7 +4,6 @@ import java.io.{PrintWriter, StringWriter}
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
-import scala.collection.compat._
 import scala.reflect.ClassTag
 import scala.util.matching.Regex
 

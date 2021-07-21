@@ -1,6 +1,6 @@
 package japgolly.microlibs.recursion
 
-import scalaz.~>
+import cats.~>
 
 object ScalaVerSpecific {
 

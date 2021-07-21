@@ -70,23 +70,6 @@ object Lib {
   def preventPublication: PE =
     _.settings(publish / skip := true)
 
-  private def extraCrossProjectScalaDirs(k: ConfigKey): Def.Initialize[Seq[File]] = Def.setting {
-    val srcBase = (k / sourceDirectory).value
-    val stage   = srcBase.getName()
-    val shared  = srcBase.getParentFile().getParentFile().getParentFile() / "shared" / "src" / stage
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, _))  => Seq(shared / "scala-2")
-      case Some((3, _))  => Seq(shared / "scala-3")
-      case _             => Nil
-    }
-  }
-
-  def crossProjectScalaDirs: CPE =
-    _.settings(
-      Compile / unmanagedSourceDirectories ++= extraCrossProjectScalaDirs(Compile).value,
-      Test / unmanagedSourceDirectories    ++= extraCrossProjectScalaDirs(Test).value,
-    )
-
   def disableScalaDoc3: PE =
     _.settings(
       Compile / doc / sources                := { if (scalaVersion.value startsWith "3") Seq.empty else (Compile / doc / sources               ).value },

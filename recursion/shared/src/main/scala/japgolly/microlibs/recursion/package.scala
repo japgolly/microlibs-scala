@@ -1,6 +1,6 @@
 package japgolly.microlibs
 
-import scalaz.{Free, Cofree}
+import cats.free.{Cofree, Free}
 
 package object recursion {
 

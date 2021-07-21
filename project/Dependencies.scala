@@ -7,33 +7,30 @@ object Dependencies {
   object Ver {
 
     // Exported
+    val cats            = "2.6.1"
     val scala2          = "2.13.6"
-    val scala3          = "3.0.0"
-    val scalaCollCompat = "2.4.4"
-    val scalaz          = "7.2.32"
+    val scala3          = "3.0.1"
     val sourceCode      = "0.2.7"
     val univEq          = "1.4.0"
 
     // Internal
     val jamm            = "0.3.3"
     val kindProjector   = "0.13.0"
-    val nyaya           = "0.10.0"
+    val scalaCheck      = "1.15.4"
     val scalaJsJavaTime = "1.0.0"
     val utest           = "0.7.10"
   }
 
   object Dep {
+    val catsCore        = Def.setting("org.typelevel"                 %%% "cats-core"               % Ver.cats)
+    val catsFree        = Def.setting("org.typelevel"                 %%% "cats-free"               % Ver.cats)
     val jamm            = Def.setting("com.github.jbellis"              % "jamm"                    % Ver.jamm)
-    val nyayaGen        = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-gen"               % Ver.nyaya)
-    val nyayaProp       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-prop"              % Ver.nyaya)
-    val nyayaTest       = Def.setting("com.github.japgolly.nyaya"     %%% "nyaya-test"              % Ver.nyaya)
-    val scalaCollCompat = Def.setting("org.scala-lang.modules"        %%% "scala-collection-compat" % Ver.scalaCollCompat)
+    val scalaCheck      = Def.setting("org.scalacheck"                %%% "scalacheck"              % Ver.scalaCheck)
     val scalaCompiler   = Def.setting("org.scala-lang"                  % "scala-compiler"          % scalaVersion.value)
     val scalaJsJavaTime = Def.setting("org.scala-js"                  %%% "scalajs-java-time"       % Ver.scalaJsJavaTime cross CrossVersion.for3Use2_13)
-    val scalaz          = Def.setting("org.scalaz"                    %%% "scalaz-core"             % Ver.scalaz cross CrossVersion.for3Use2_13)
     val sourceCode      = Def.setting("com.lihaoyi"                   %%% "sourcecode"              % Ver.sourceCode)
     val univEq          = Def.setting("com.github.japgolly.univeq"    %%% "univeq"                  % Ver.univEq)
-    val univEqScalaz    = Def.setting("com.github.japgolly.univeq"    %%% "univeq-scalaz"           % Ver.univEq)
+    val univEqCats      = Def.setting("com.github.japgolly.univeq"    %%% "univeq-cats"             % Ver.univEq)
     val utest           = Def.setting("com.lihaoyi"                   %%% "utest"                   % Ver.utest)
 
     // Compiler plugins

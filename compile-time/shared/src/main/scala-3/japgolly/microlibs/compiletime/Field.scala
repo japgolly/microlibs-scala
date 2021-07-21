@@ -18,6 +18,7 @@ trait Field {
   final def typeRepr(using q: Quotes): q.reflect.TypeRepr =
     q.reflect.TypeRepr.of(using typeInstance)
 
+  // TODO: Do this without .productElement
   final def onProduct[P](p: Expr[P])(using Quotes, scala.quoted.Type[P]): Expr[Type] =
     '{ $p.asInstanceOf[Product].productElement(${Expr(idx)}).asInstanceOf[Type] }
 }

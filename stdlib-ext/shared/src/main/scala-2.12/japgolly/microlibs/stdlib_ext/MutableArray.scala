@@ -1,6 +1,6 @@
 package japgolly.microlibs.stdlib_ext
 
-import scala.collection.compat._
+import scala.collection.Factory
 
 /**
   * Scala arrays don't support in-place modification.

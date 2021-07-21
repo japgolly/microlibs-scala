@@ -1,7 +1,7 @@
 package japgolly.microlibs.recursion
 
+import japgolly.microlibs.recursion.MathExpr.Helpers._
 import utest._
-import MathExpr.Helpers._
 
 object RecursionTest extends TestSuite {
 

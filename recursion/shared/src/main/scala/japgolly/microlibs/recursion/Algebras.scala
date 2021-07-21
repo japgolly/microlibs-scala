@@ -1,6 +1,7 @@
 package japgolly.microlibs.recursion
 
-import scalaz.{-\/, Free, Functor, Monad, \/, \/-}
+import cats.free.Free
+import cats.{Functor, Monad}
 
 final class FAlgebraOps[F[_], A](private val self: FAlgebra[F, A]) extends AnyVal {
 
@@ -32,8 +33,8 @@ final class FCoalgebraOps[F[_], A](private val self: FCoalgebra[F, A]) extends A
   def toCVCoalgebra(implicit F: Functor[F]): CVCoalgebra[F, A] =
     a => F.map(self(a))(Free.pure)
 
-  def cozip[B](that: FCoalgebra[F, B])(implicit F: Functor[F]): FCoalgebra[F, A \/ B] = {
-    case -\/(a) => F.map(self(a))(-\/(_))
-    case \/-(b) => F.map(that(b))(\/-(_))
+  def cozip[B](that: FCoalgebra[F, B])(implicit F: Functor[F]): FCoalgebra[F, Either[A, B]] = {
+    case Left (a) => F.map(self(a))(Left(_))
+    case Right(b) => F.map(that(b))(Right(_))
   }
 }

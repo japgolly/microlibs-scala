@@ -45,14 +45,14 @@ object Microlibs {
       organization                  := "com.github.japgolly.microlibs",
       homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
       licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
-      scalaVersion                  := Ver.scala3,
+      scalaVersion                  := Ver.scala2,
       crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
       scalacOptions                ++= scalacCommonFlags,
       scalacOptions                ++= byScalaVersion {
                                          case (2, _) => scalac2Flags
                                          case (3, _) => scalac3Flags
                                        }.value,
-      Test / scalacOptions         --= Seq("-Ywarn-dead-code", "-Ywarn-unused"),
+      Test / scalacOptions         --= Seq("-Ywarn-dead-code"),
       testFrameworks                := Nil,
       ThisBuild / shellPrompt       := ((s: State) => Project.extract(s).currentRef.project + "> "),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
@@ -89,11 +89,12 @@ object Microlibs {
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
         adtMacrosJVM,
+        catsExtJVM,
         compileTimeJVM,
+        disjunctionJVM,
         nameFnJVM,
         nonemptyJVM,
         recursionJVM,
-        scalazExtJVM,
         stdlibExtJVM,
         testUtilJVM,
         typesJVM,
@@ -105,11 +106,12 @@ object Microlibs {
       .configure(commonSettings.jvm, preventPublication)
       .aggregate(
         adtMacrosJS,
+        catsExtJS,
         compileTimeJS,
+        disjunctionJS,
         nameFnJS,
         nonemptyJS,
         recursionJS,
-        scalazExtJS,
         stdlibExtJS,
         testUtilJS,
         typesJS,
@@ -122,28 +124,43 @@ object Microlibs {
   lazy val adtMacrosJS  = adtMacros.js
   lazy val adtMacros = crossProject(JVMPlatform, JSPlatform)
     .in(file("adt-macros"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
+    .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
     .dependsOn(compileTime, nonempty)
     .settings(
       moduleName := "adt-macros",
       scalacOptions --= Seq("-source:3.0-migration"))
 
+  lazy val catsExtJVM = catsExt.jvm
+  lazy val catsExtJS  = catsExt.js
+  lazy val catsExt = crossProject(JVMPlatform, JSPlatform)
+    .in(file("cats-ext"))
+    .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
+    .dependsOn(compileTime)
+    .settings(
+      moduleName := "cats-ext",
+      scalacOptions --= Seq("-source:3.0-migration"),
+      libraryDependencies += Dep.catsCore.value)
+
   lazy val compileTimeJVM = compileTime.jvm
   lazy val compileTimeJS  = compileTime.js
   lazy val compileTime = crossProject(JVMPlatform, JSPlatform)
     .in(file("compile-time"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
+    .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
     .settings(
       moduleName := "compile-time",
       scalacOptions --= Seq("-source:3.0-migration"),
-      libraryDependencies += Dep.scalaCollCompat.value,
       libraryDependencies ++= Seq(Dep.sourceCode.value).filterNot(_ => scalaVersion.value.startsWith("3")))
+
+  lazy val disjunctionJVM = disjunction.jvm
+  lazy val disjunctionJS  = disjunction.js
+  lazy val disjunction = crossProject(JVMPlatform, JSPlatform)
+    .configureCross(commonSettings, publicationSettings)
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js
   lazy val nameFn = crossProject(JVMPlatform, JSPlatform)
     .in(file("name-fn"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
+    .configureCross(commonSettings, publicationSettings, definesMacros, utestSettings)
     .settings(moduleName := "name-fn")
 
   lazy val nonemptyJVM = nonempty.jvm
@@ -152,54 +169,47 @@ object Microlibs {
     .configureCross(commonSettings, publicationSettings, utestSettings)
     .settings(
       libraryDependencies ++= Seq(
-        Dep.scalaCollCompat.value,
-        Dep.scalaz         .value,
-        Dep.univEqScalaz   .value,
+        Dep.catsCore  .value,
+        Dep.univEqCats.value,
       ))
 
   lazy val recursionJVM = recursion.jvm
   lazy val recursionJS  = recursion.js
   lazy val recursion = crossProject(JVMPlatform, JSPlatform)
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings)
-    .settings(libraryDependencies += Dep.scalaz.value)
-
-  lazy val scalazExtJVM = scalazExt.jvm
-  lazy val scalazExtJS  = scalazExt.js
-  lazy val scalazExt = crossProject(JVMPlatform, JSPlatform)
-    .in(file("scalaz-ext"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, definesMacros, utestSettings)
-    .dependsOn(compileTime)
+    .configureCross(commonSettings, publicationSettings, utestSettings)
     .settings(
-      moduleName := "scalaz-ext",
-      scalacOptions --= Seq("-source:3.0-migration"),
-      libraryDependencies += Dep.scalaz.value)
+      libraryDependencies ++= Seq(
+        Dep.catsCore.value,
+        Dep.catsFree.value,
+      ),
+    )
 
   lazy val stdlibExtJVM = stdlibExt.jvm
   lazy val stdlibExtJS  = stdlibExt.js
   lazy val stdlibExt = crossProject(JVMPlatform, JSPlatform)
     .in(file("stdlib-ext"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings, useTestUtil)
+    .configureCross(commonSettings, publicationSettings, utestSettings, useTestUtil)
     .configure(disableScalaDoc3)
     .settings(
       moduleName := "stdlib-ext",
       libraryDependencies ++= Seq(
-        Dep.scalaCollCompat.value,
-        Dep.nyayaGen       .value % Test))
+        Dep.scalaCheck.value % Test,
+      ))
     .jsSettings(libraryDependencies += Dep.scalaJsJavaTime.value % Test)
 
   lazy val testUtilJVM = testUtil.jvm
   lazy val testUtilJS  = testUtil.js
   lazy val testUtil = crossProject(JVMPlatform, JSPlatform)
     .in(file("test-util"))
-    .configureCross(commonSettings, crossProjectScalaDirs, publicationSettings, utestSettings)
+    .configureCross(commonSettings, publicationSettings, utestSettings)
     .dependsOn(compileTime)
     .settings(
       moduleName := "test-util",
       libraryDependencies ++= Seq(
-        Dep.scalaz      .value,
-        Dep.sourceCode  .value,
-        Dep.univEq      .value,
-        Dep.univEqScalaz.value,
+        Dep.catsCore  .value,
+        Dep.sourceCode.value,
+        Dep.univEq    .value,
+        Dep.univEqCats.value,
       ))
 
   lazy val typesJVM = types.jvm
@@ -215,10 +225,9 @@ object Microlibs {
     .dependsOn(stdlibExt)
     .settings(
       libraryDependencies ++= Seq(
-        Dep.univEq   .value,
-        Dep.nyayaGen .value % Test,
-        Dep.nyayaProp.value % Test,
-        Dep.nyayaTest.value % Test))
+        Dep.univEq    .value,
+        Dep.scalaCheck.value % Test,
+      ))
 
   // ===================================================================================================================
 

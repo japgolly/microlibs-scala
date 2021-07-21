@@ -1,9 +1,9 @@
 package japgolly.microlibs.utils
 
+import japgolly.microlibs.utils.SafeBool._
 import japgolly.univeq.UnivEq
-import scala.collection.compat._
-import SafeBool._
 import scala.annotation.nowarn
+import scala.collection.Factory
 
 /** Boolean isomorphism.
   *

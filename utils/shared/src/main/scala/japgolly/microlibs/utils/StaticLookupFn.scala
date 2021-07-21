@@ -2,8 +2,8 @@ package japgolly.microlibs.utils
 
 import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.univeq.UnivEq
-import scala.reflect.ClassTag
 import scala.annotation.nowarn
+import scala.reflect.ClassTag
 
 /** Fast, efficient lookup functions for static data.
   *

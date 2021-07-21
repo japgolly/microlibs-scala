@@ -1,10 +1,8 @@
 package japgolly.microlibs.adt_macros
 
-import japgolly.microlibs.nonempty.{NonEmptySet, NonEmptyVector}
-import utest._
 import aa._
-import AdtMacros._
-import japgolly.univeq.UnivEq
+import japgolly.microlibs.adt_macros.AdtMacros._
+import utest._
 
 object Scala2AdtMacroTest extends TestSuite {
   import AdtMacroTest._

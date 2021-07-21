@@ -1,15 +1,14 @@
 package japgolly.microlibs.testutil
 
+import cats.Eq
+import cats.syntax.eq._
+import japgolly.microlibs.testutil.TestUtilInternals._
 import japgolly.univeq.UnivEq
-import japgolly.univeq.UnivEqScalaz.scalazEqualFromUnivEq
+import japgolly.univeq.UnivEqCats.catsEqFromUnivEq
 import java.io.ByteArrayOutputStream
 import scala.annotation.tailrec
-import scala.collection.compat._
 import scala.io.AnsiColor._
-import scalaz.Equal
-import scalaz.syntax.equal._
 import sourcecode.Line
-import TestUtilInternals._
 
 trait TestUtilWithoutUnivEq
     extends ScalaVerSpecificTestUtil
@@ -71,23 +70,23 @@ trait TestUtilWithoutUnivEq
     failMethod(method, name)
   }
 
-  def assertEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
+  def assertEq[A: Eq](actual: A, expect: A)(implicit q: Line): Unit =
     assertEqO(None, actual, expect)
 
-  def assertEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
+  def assertEq[A: Eq](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
     assertEqO(Some(name), actual, expect)
 
-  def assertEqO[A: Equal](name: => Option[String], actual: A, expect: A)(implicit q: Line): Unit =
-    if (actual ≠ expect)
+  def assertEqO[A: Eq](name: => Option[String], actual: A, expect: A)(implicit q: Line): Unit =
+    if (actual =!= expect)
       fail2("assertEq", name)("expect", BOLD_BRIGHT_GREEN, expect)("actual", BOLD_BRIGHT_RED, actual)
 
-  def assertNotEq[A: Equal](actual: A, expect: A)(implicit q: Line): Unit =
+  def assertNotEq[A: Eq](actual: A, expect: A)(implicit q: Line): Unit =
     assertNotEqO(None, actual, expect)
 
-  def assertNotEq[A: Equal](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
+  def assertNotEq[A: Eq](name: => String, actual: A, expect: A)(implicit q: Line): Unit =
     assertNotEqO(Some(name), actual, expect)
 
-  private def assertNotEqO[A: Equal](name: => Option[String], actual: A, expectNot: A)(implicit q: Line): Unit =
+  private def assertNotEqO[A: Eq](name: => Option[String], actual: A, expectNot: A)(implicit q: Line): Unit =
     if (actual === expectNot)
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
@@ -133,15 +132,15 @@ trait TestUtilWithoutUnivEq
       }
     }
 
-  def assertMap[K: UnivEq, V: Equal](actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
+  def assertMap[K: UnivEq, V: Eq](actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(None, actual, expect)
 
-  def assertMap[K: UnivEq, V: Equal](name: => String, actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
+  def assertMap[K: UnivEq, V: Eq](name: => String, actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit =
     assertMapO(Some(name), actual, expect)
 
-  def assertMapO[K: UnivEq, V: Equal](name: => Option[String], actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit = {
+  def assertMapO[K: UnivEq, V: Eq](name: => Option[String], actual: Map[K, V], expect: Map[K, V])(implicit q: Line): Unit = {
     assertSet(name.fold("Map keys")(_ + " keys"), actual.keySet, expect.keySet)
-    val bad = actual.keysIterator.filter(k => actual(k) ≠ expect(k))
+    val bad = actual.keysIterator.filter(k => actual(k) =!= expect(k))
     if (bad.nonEmpty) {
       val x = bad.toVector
       for (k <- x) {
@@ -154,12 +153,12 @@ trait TestUtilWithoutUnivEq
     }
   }
 
-  def assertSeq[A: Equal](actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(actual, expect.toSeq)
-  def assertSeq[A: Equal](actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(None, actual, expect)
-  def assertSeq[A: Equal](name: => String, actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(name, actual, expect.toSeq)
-  def assertSeq[A: Equal](name: => String, actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(Some(name), actual, expect)
+  def assertSeq[A: Eq](actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(actual, expect.toSeq)
+  def assertSeq[A: Eq](actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(None, actual, expect)
+  def assertSeq[A: Eq](name: => String, actual: Iterable[A])(expect: A*)(implicit q: Line): Unit = assertSeq(name, actual, expect.toSeq)
+  def assertSeq[A: Eq](name: => String, actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = assertSeqO(Some(name), actual, expect)
 
-  def assertSeqO[A: Equal](name: => Option[String], actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = {
+  def assertSeqO[A: Eq](name: => Option[String], actual: Iterable[A], expect: Iterable[A])(implicit q: Line): Unit = {
     var failures = List.empty[Int]
     var lenOk    = true
 
@@ -170,7 +169,7 @@ trait TestUtilWithoutUnivEq
         val a = ia.next()
         if (ie.hasNext) {
           val e = ie.next()
-          if (a ≠ e)
+          if (a =!= e)
             failures ::= i
           go(i + 1)
         } else
@@ -235,18 +234,18 @@ trait TestUtilWithoutUnivEq
     }
   }
 
-  def assertSeqIgnoreOrder[A: Equal](actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(actual, expect.toSeq)
-  def assertSeqIgnoreOrder[A: Equal](actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(None, actual, expect)
-  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(name, actual, expect.toSeq)
-  def assertSeqIgnoreOrder[A: Equal](name: => String, actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
+  def assertSeqIgnoreOrder[A: Eq](actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Eq](actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(None, actual, expect)
+  def assertSeqIgnoreOrder[A: Eq](name: => String, actual: IterableOnce[A])(expect: A*)(implicit q: Line): Unit = assertSeqIgnoreOrder(name, actual, expect.toSeq)
+  def assertSeqIgnoreOrder[A: Eq](name: => String, actual: IterableOnce[A], expect: IterableOnce[A])(implicit q: Line): Unit = assertSeqIgnoreOrderO(Some(name), actual, expect)
 
   def assertSeqIgnoreOrderO[A](name: => Option[String], actual: IterableOnce[A], expect: IterableOnce[A])
-                              (implicit q: Line, A: Equal[A]): Unit =
+                              (implicit q: Line, A: Eq[A]): Unit =
     _assertSeqIgnoreOrderO("assertSeqIgnoreOrder")(name, actual, expect)
 
   private def _assertSeqIgnoreOrderO[A](methodName: String)
                                        (name: => Option[String], actual: IterableOnce[A], expect: IterableOnce[A])
-                                       (implicit q: Line, A: Equal[A]): Unit = {
+                                       (implicit q: Line, A: Eq[A]): Unit = {
     val as = actual.iterator.toArray[Any]
     val es = expect.iterator.toArray[Any]
     var matches = 0
@@ -256,7 +255,7 @@ trait TestUtilWithoutUnivEq
       @tailrec def go(ie: Int): Unit =
         if (ie >= 0) {
           val e = es(ie)
-          val ok = !e.isInstanceOf[Poison] && A.equal(a, e.asInstanceOf[A])
+          val ok = !e.isInstanceOf[Poison] && A.eqv(a, e.asInstanceOf[A])
           if (ok) {
             matches += 1
             as(ia) = Poison
@@ -390,13 +389,13 @@ trait TestUtilWithoutUnivEq
     }
   }
 
-  def assertChange[A, B: Equal, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
+  def assertChange[A, B: Eq, R](query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
     assertChangeO(None, query, block)(actual)(expect)
 
-  def assertChange[A, B: Equal, R](desc: => String, query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
+  def assertChange[A, B: Eq, R](desc: => String, query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R =
     assertChangeO(Some(desc), query, block)(actual)(expect)
 
-  def assertChangeO[A, B: Equal, R](desc: => Option[String], query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R = {
+  def assertChangeO[A, B: Eq, R](desc: => Option[String], query: => A, block: => R)(actual: (A, A) => B)(expect: (A, R) => B)(implicit q: Line): R = {
     val before = query
     val result = block
     val after  = query
@@ -404,22 +403,22 @@ trait TestUtilWithoutUnivEq
     result
   }
 
-  def assertNoChange[B: Equal, A](query: => B)(block: => A)(implicit q: Line): A =
+  def assertNoChange[B: Eq, A](query: => B)(block: => A)(implicit q: Line): A =
     assertNoChangeO(None, query)(block)
 
-  def assertNoChange[B: Equal, A](desc: => String, query: => B)(block: => A)(implicit q: Line): A =
+  def assertNoChange[B: Eq, A](desc: => String, query: => B)(block: => A)(implicit q: Line): A =
     assertNoChangeO(Some(desc), query)(block)
 
-  def assertNoChangeO[B: Equal, A](desc: => Option[String], query: => B)(block: => A)(implicit q: Line): A =
+  def assertNoChangeO[B: Eq, A](desc: => Option[String], query: => B)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)((b, _) => b)((b, _) => b)
 
-  def assertDifference[N: Numeric : Equal, A](query: => N)(expect: N)(block: => A)(implicit q: Line): A =
+  def assertDifference[N: Numeric : Eq, A](query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertDifferenceO(None, query)(expect)(block)
 
-  def assertDifference[N: Numeric : Equal, A](desc: => String, query: => N)(expect: N)(block: => A)(implicit q: Line): A =
+  def assertDifference[N: Numeric : Eq, A](desc: => String, query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertDifferenceO(Some(desc), query)(expect)(block)
 
-  def assertDifferenceO[N: Numeric : Equal, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
+  def assertDifferenceO[N: Numeric : Eq, A](desc: => Option[String], query: => N)(expect: N)(block: => A)(implicit q: Line): A =
     assertChangeO(desc, query, block)(implicitly[Numeric[N]].minus)((_, _) => expect)
 
   def assertEqWithTolerance(actual: Double, expect: Double)(implicit l: Line): Unit =
@@ -457,6 +456,6 @@ trait TestUtilWithoutUnivEq
 trait TestUtil
   extends TestUtilWithoutUnivEq
      with japgolly.univeq.UnivEqExports
-     with japgolly.univeq.UnivEqScalaz
+     with japgolly.univeq.UnivEqCats
 
 object TestUtil extends TestUtil
