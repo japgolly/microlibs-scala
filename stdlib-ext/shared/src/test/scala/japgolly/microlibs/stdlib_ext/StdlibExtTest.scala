@@ -12,9 +12,9 @@ object StdlibExtTest extends TestSuite {
   override def tests = Tests {
 
     "indent(int)" - {
-      assert("a".indent(2) == "  a")
-      assert("a\nb".indent(2) == "  a\n  b")
-      assert("a\n  b".indent(2) == "  a\n    b")
+      assert("a".indentLines(2) == "  a")
+      assert("a\nb".indentLines(2) == "  a\n  b")
+      assert("a\n  b".indentLines(2) == "  a\n    b")
     }
 
     "unindent" - {
