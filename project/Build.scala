@@ -92,6 +92,7 @@ object Microlibs {
         catsExtJVM,
         compileTimeJVM,
         disjunctionJVM,
+        multimapJVM,
         nameFnJVM,
         nonemptyJVM,
         recursionJVM,
@@ -109,6 +110,7 @@ object Microlibs {
         catsExtJS,
         compileTimeJS,
         disjunctionJS,
+        multimapJS,
         nameFnJS,
         nonemptyJS,
         recursionJS,
@@ -155,6 +157,16 @@ object Microlibs {
   lazy val disjunctionJS  = disjunction.js
   lazy val disjunction = crossProject(JVMPlatform, JSPlatform)
     .configureCross(commonSettings, publicationSettings)
+
+  lazy val multimapJVM = multimap.jvm
+  lazy val multimapJS  = multimap.js
+  lazy val multimap = crossProject(JVMPlatform, JSPlatform)
+    .configureCross(commonSettings, publicationSettings, utestSettings)
+    .settings(
+      libraryDependencies ++= Seq(
+        Dep.catsCore.value,
+        Dep.scalaCheck.value % Test,
+      ))
 
   lazy val nameFnJVM = nameFn.jvm
   lazy val nameFnJS  = nameFn.js
