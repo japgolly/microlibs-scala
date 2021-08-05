@@ -5,11 +5,11 @@ object InlineUtils:
   inline def warn(inline warning: String): Unit =
     ${ QuotingUtils.warn('warning) }
 
-  inline def printCode(inline body: Any): body.type =
+  transparent inline def printCode[A](inline body: A): A =
     println(showCode(body))
     body
 
-  inline def printTasty(inline body: Any): body.type =
+  transparent inline def printTasty[A](inline body: A): A =
     println(showTasty(body))
     body
 
