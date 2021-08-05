@@ -48,9 +48,6 @@ object Lib {
     .jsConfigure(
       sourceMapsToGithub(ghProject))
 
-  def byScalaVersion[A](f: PartialFunction[(Long, Long), Seq[A]]): Def.Initialize[Seq[A]] =
-    Def.setting(CrossVersion.partialVersion(scalaVersion.value).flatMap(f.lift).getOrElse(Nil))
-
   def sourceMapsToGithub(ghProject: String): PE =
     p => p.settings(
       scalacOptions ++= {

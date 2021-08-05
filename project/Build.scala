@@ -48,10 +48,8 @@ object Microlibs {
       scalaVersion                  := Ver.scala2,
       crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
       scalacOptions                ++= scalacCommonFlags,
-      scalacOptions                ++= byScalaVersion {
-                                         case (2, _) => scalac2Flags
-                                         case (3, _) => scalac3Flags
-                                       }.value,
+      scalacOptions                ++= scalac2Flags.filter(_ => scalaVersion.value.startsWith("2")),
+      scalacOptions                ++= scalac3Flags.filter(_ => scalaVersion.value.startsWith("3")),
       Test / scalacOptions         --= Seq("-Ywarn-dead-code"),
       testFrameworks                := Nil,
       ThisBuild / shellPrompt       := ((s: State) => Project.extract(s).currentRef.project + "> "),
