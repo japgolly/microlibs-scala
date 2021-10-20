@@ -11,7 +11,7 @@ object Dependencies {
     val scala2          = "2.13.6"
     val scala3          = "3.0.2"
     val sourceCode      = "0.2.7"
-    val univEq          = "1.6.0"
+    val univEq          = "2.0.0-RC1"
 
     // Internal
     val jamm            = "0.3.3"
