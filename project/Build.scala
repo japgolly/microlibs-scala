@@ -42,9 +42,6 @@ object Microlibs {
 
   val commonSettings = ConfigureBoth(
     _.settings(
-      organization                  := "com.github.japgolly.microlibs",
-      homepage                      := Some(url("https://github.com/japgolly/" + ghProject)),
-      licenses                      += ("Apache-2.0", url("http://opensource.org/licenses/Apache-2.0")),
       scalaVersion                  := Ver.scala2,
       crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
       scalacOptions                ++= scalacCommonFlags,
@@ -52,7 +49,6 @@ object Microlibs {
       scalacOptions                ++= scalac3Flags.filter(_ => scalaVersion.value.startsWith("3")),
       Test / scalacOptions         --= Seq("-Ywarn-dead-code"),
       testFrameworks                := Nil,
-      ThisBuild / shellPrompt       := ((s: State) => Project.extract(s).currentRef.project + "> "),
       updateOptions                 := updateOptions.value.withCachedResolution(true),
       releasePublishArtifactsAction := PgpKeys.publishSigned.value,
       releaseTagComment             := s"v${(ThisBuild / version).value}",
