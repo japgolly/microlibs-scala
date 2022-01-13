@@ -8,7 +8,7 @@ object Dependencies {
 
     // Exported
     val cats            = "2.6.1"
-    val scala2          = "2.13.6"
+    val scala2          = "2.13.8"
     val scala3          = "3.0.2"
     val sourceCode      = "0.2.7"
     val univEq          = "2.0.0"
