@@ -10,7 +10,7 @@ object Dependencies {
     val cats            = "2.6.1"
     val scala2          = "2.13.6"
     val scala3          = "3.0.2"
-    val sourceCode      = "0.2.7"
+    val sourceCode      = "0.2.8"
     val univEq          = "2.0.0"
 
     // Internal
