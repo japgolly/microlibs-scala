@@ -10,7 +10,7 @@ object Dependencies {
     val cats            = "2.6.1"
     val scala2          = "2.13.6"
     val scala3          = "3.0.2"
-    val sourceCode      = "0.2.7"
+    val sourceCode      = "0.2.8"
     val univEq          = "2.0.0"
 
     // Internal
@@ -18,7 +18,7 @@ object Dependencies {
     val kindProjector   = "0.13.2"
     val scalaCheck      = "1.15.4"
     val scalaJsJavaTime = "1.0.0"
-    val utest           = "0.7.10"
+    val utest           = "0.7.11"
   }
 
   object Dep {
