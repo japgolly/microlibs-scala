@@ -9,6 +9,10 @@ object NewInstance {
   type TermLookupFn = (q: Quotes) ?=> (q.reflect.ValDef , FailFn) => q.reflect.Term
   type TypeLookupFn = (q: Quotes) ?=> (q.reflect.TypeDef, FailFn) => q.reflect.TypeTree
 
+  private inline def debug(inline msg: Any): Unit = {
+    // println(msg)
+  }
+
   def of[A: Type](findTermArg          : Option[TermLookupFn] = None,
                   findTypeArg          : Option[TypeLookupFn] = None,
                   autoPopulateImplicits: Boolean              = true,
@@ -23,6 +27,30 @@ object NewInstance {
 
     if A.flags.is(Flags.Trait) then
       fail(s"${Type.show[A]} is a trait. It needs to be a class.")
+
+    debug("=" * 120)
+    debug(s"NewInstance[${Type.show[A]}]")
+    debug("")
+
+    // TODO: Remove after upgrade to Scala 3.1.2+ and this becomes non-experimental
+    // https://github.com/lampepfl/dotty/commit/7293af146e108366fbe3ff5ec37dc0e527bbaf6a
+    def substituteTypes(src: TypeRepr)(from: List[Symbol], to: List[TypeRepr]): TypeRepr = {
+      var s = src
+      from.iterator.zip(to.iterator).foreach { case (f, t) =>
+        debug(s"  [ST] ${s.typeSymbol} == $f == ${s.typeSymbol == f}")
+        if s.typeSymbol == f then
+          s = t
+        // else
+          // Can't do this cos of https://github.com/lampepfl/dotty/issues/14740
+          // s match
+          //   case AppliedType(base, args) if args.nonEmpty =>
+          //     val args2 = args.map(substituteTypes(_)(from, to))
+          //     s = AppliedType(base, args2)
+          //   case _ =>
+          //     t
+      }
+      s
+    }
 
     val ctor = A.primaryConstructor
 
@@ -60,20 +88,40 @@ object NewInstance {
       result getOrElse failFn()
     }
 
-    var classType = TypeRepr.of[A].dealias.asTypeTree
-    var typeArgs  = Vector.empty[TypeTree]
-    var termArgs  = List.empty[List[Term]]
+    var classType     = TypeRepr.of[A].dealias.asTypeTree
+    var typeSubstFrom = List.empty[Symbol]
+    var typeSubstTo   = List.empty[TypeRepr]
+    var typeArgs      = Vector.empty[TypeTree]
+    var termArgs      = List.empty[List[Term]]
 
     // Extract provided class types
+    debug(s"classType[1] = ${classType.tpe}")
     classType.tpe match {
 
       // A = F[X, Y, ..]
       case AppliedType(cls, args) =>
+        // Here we collect substitutions to make to go from type params to applied type args
+        ctor.tree match {
+          case DefDef(_, _, tt, _) =>
+            tt.tpe match {
+              case AppliedType(_, typeParams) =>
+                typeSubstFrom = typeParams.map(_.typeSymbol)
+                typeSubstTo = args
+              case _ =>
+            }
+          case _ =>
+        }
         classType = cls.asTypeTree
         typeArgs  = args.iterator.map(_.asTypeTree).toVector
 
       case _ =>
     }
+    debug(s"""
+classType[2]  = ${classType.tpe}
+typeArgs      = $typeArgs
+typeSubstFrom = $typeSubstFrom
+typeSubstTo   = $typeSubstTo
+    """.trim)
 
     // Extract args
     locally {
@@ -83,7 +131,15 @@ object NewInstance {
         clauses.foreach {
           case c: TermParamClause =>
             val isImplicit = c.isImplicit || c.isGiven
-            termArgs = termArgs ::: c.params.map(generateTermArg(_, isImplicit = isImplicit)) :: Nil
+            var params = c.params
+            debug("CtorParams[1] = " + params)
+            if (typeSubstFrom.nonEmpty)
+              params = params.map { p =>
+                val newType = substituteTypes(p.tpt.tpe)(typeSubstFrom, typeSubstTo)
+                ValDef.copy(p)(p.name, newType.asTypeTree, p.rhs)
+              }
+            debug("CtorParams[2] = " + params)
+            termArgs = termArgs ::: params.map(generateTermArg(_, isImplicit = isImplicit)) :: Nil
           case c: TypeParamClause =>
             for (p <- c.params)
               if typeParamsToSkip > 0
