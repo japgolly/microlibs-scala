@@ -15,4 +15,15 @@ object Scala3CompilationTests {
 
   type PI = P[Int]
   newInstance[PI]
+
+  implicit val i: Int = 123
+  implicit val lli: List[List[Int]] = Nil :: Nil
+  class I1(implicit j: Int)
+  class I2[A](implicit a: A)
+  class I3[A]()(implicit a: List[List[A]])
+  newInstance[I1]
+  newInstance[I2[Int]]
+  // newInstance[I3[Int]]
+  // try implicit defaults too
+
 }
