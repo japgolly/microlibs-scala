@@ -228,10 +228,11 @@ object Microlibs {
   lazy val utilsJS  = utils.js
   lazy val utils = crossProject(JVMPlatform, JSPlatform)
     .configureCross(commonSettings, publicationSettings, utestSettings)
-    .dependsOn(stdlibExt)
+    .dependsOn(stdlibExt, nonempty, multimap, testUtil % "test->compile")
     .settings(
       libraryDependencies ++= Seq(
         Dep.univEq    .value,
+        Dep.nyayaGen  .value % Test,
         Dep.scalaCheck.value % Test,
       ))
 

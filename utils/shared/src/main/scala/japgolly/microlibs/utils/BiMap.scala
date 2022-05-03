@@ -16,6 +16,7 @@ final class BiMap[A, B] private (val forward: Map[A, B], val backward: Map[B, A]
 
   override def hashCode = forward.##
 
+  @nowarn
   override def equals(obj: Any): Boolean =
     obj match {
       case x: BiMap[A, B] => this.forward == x.forward

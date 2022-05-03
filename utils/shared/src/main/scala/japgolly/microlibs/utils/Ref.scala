@@ -1,6 +1,7 @@
 package japgolly.microlibs.utils
 
 import japgolly.univeq.UnivEq
+import scala.annotation.nowarn
 
 /**
  * Wraps a value such that reference equality holds.
@@ -9,6 +10,8 @@ import japgolly.univeq.UnivEq
  */
 final class Ref[A <: AnyRef](val value: A) {
   override def hashCode = value.##
+
+  @nowarn
   override def equals(other: Any) =
     other match {
       case r: Ref[A] => value eq r.value

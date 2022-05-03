@@ -1,5 +1,6 @@
 package japgolly.microlibs.testutil
 
+import scala.annotation.nowarn
 import scala.io.AnsiColor._
 import sourcecode.Line
 
@@ -52,6 +53,7 @@ object TestUtilInternals {
 
     failureStart(name, titleLen + 1)
 
+    @nowarn
     val toString: Any => String = {
       case s: Stream[_] => s.force.toString() // SI-9266
       case a            => a.toString
