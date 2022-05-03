@@ -12,6 +12,11 @@ object StdlibExt extends ScalaSpecificStdlibExt with PlatformSpecificStdlibExt {
   // JSLE prefix = Japgolly StdLib Ext
 
   implicit class JSLE_String(private val s: String) extends AnyVal {
+
+    /** `"a\n"` becomes `"a\\n"` */
+    def escape: String =
+      EscapeUtils.escape(s)
+
     def indentLines(i: String): String =
       if (i.isEmpty)
         s
@@ -23,6 +28,10 @@ object StdlibExt extends ScalaSpecificStdlibExt with PlatformSpecificStdlibExt {
         s
       else
         indentLines(" " * spaces)
+
+    /** `"a\n"` becomes `"\"a\\n\""` */
+    def quote: String =
+      EscapeUtils.quote(s)
 
     def unindent(spaces: Int): String = {
       if (spaces <= 0)
