@@ -1,6 +1,7 @@
 package japgolly.microlibs.utils
 
 import japgolly.univeq.UnivEq
+import scala.annotation.nowarn
 
 object Memo {
   // Because of annoying Intellij IDEA
@@ -42,4 +43,19 @@ object Memo {
 
   def byRef[A <: AnyRef, B](f: A => B): A => B =
     by[A, Ref[A]](Ref.apply)(f)
+
+  // Immutable maps are optimised at low values to not even create a hash map
+  @nowarn("cat=unused")
+  def withUnsyncronizedMap[K: UnivEq, V](f: K => V): K => V = {
+    var m = Map.empty[K, V]
+    k =>
+      if (m.contains(k))
+        m(k)
+      else {
+        val v = f(k)
+        m = m.updated(k, v)
+        v
+      }
+  }
+
 }

@@ -1,8 +1,9 @@
 package japgolly.microlibs.multimap
 
 import cats.Eq
-import MultiValues.Commutative
-import Multimap._, Internal._
+import japgolly.microlibs.multimap.MultiValues.Commutative
+import japgolly.microlibs.multimap.Multimap.Internal._
+import japgolly.microlibs.multimap.Multimap._
 
 final class Multimap[K, L[_], V](val m: Map[K, L[V]])(implicit L: MultiValues[L]) {
 
