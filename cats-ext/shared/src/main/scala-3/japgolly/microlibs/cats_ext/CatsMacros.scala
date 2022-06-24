@@ -60,7 +60,7 @@ object CatsMacros:
       val err = s"Don't know how to derive an Eq instance for ${Type.show[A]}: Mirror not found."
       log(err)
       log("="*120)
-      quotes.reflect.report.throwError(err)
+      quotes.reflect.report.errorAndAbort(err)
     else
       log(result.show)
       log("="*120)
