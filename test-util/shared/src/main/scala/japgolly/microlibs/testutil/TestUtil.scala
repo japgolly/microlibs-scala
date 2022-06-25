@@ -8,12 +8,15 @@ import japgolly.univeq.UnivEqCats.catsEqFromUnivEq
 import java.io.ByteArrayOutputStream
 import scala.annotation._
 import scala.io.AnsiColor._
+import scala.util.{Failure, Success, Try}
 import sourcecode.Line
 
 trait TestUtilWithoutUnivEq
     extends ScalaVerSpecificTestUtil
        with TypeTestingUtil
        with TestUtilImplicits {
+
+  import TestUtil._
 
   def withAtomicOutput[A](a: => A): A = {
     val os = new ByteArrayOutputStream()
@@ -91,40 +94,54 @@ trait TestUtilWithoutUnivEq
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertMultiline(actual: String, expect: String)(implicit q: Line): Unit =
-    _assertMultiline(None, actual, expect)
+    _assertMultiline(None, actual, expect, TestUtilGlobalSettings.assertMultiline.value)
 
   def assertMultiline(name: => String, actual: String, expect: String)(implicit q: Line): Unit =
-    _assertMultiline(Some(name), actual, expect)
+    _assertMultiline(Some(name), actual, expect, TestUtilGlobalSettings.assertMultiline.value)
 
-  private def _assertMultiline(name: => Option[String], actual: String, expect: String)(implicit q: Line): Unit =
+  def assertMultiline(actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(None, actual, expect, cfg)
+
+  def assertMultiline(name: => String, actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(Some(name), actual, expect, cfg)
+
+  def assertMultiline(actual: String, expect: String, cfg: AssertMultilineSettings => AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(None, actual, expect, cfg(TestUtilGlobalSettings.assertMultiline.value))
+
+  def assertMultiline(name: => String, actual: String, expect: String, cfg: AssertMultilineSettings => AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(Some(name), actual, expect, cfg(TestUtilGlobalSettings.assertMultiline.value))
+
+  private def _assertMultiline(name: => Option[String], actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
     if (actual != expect) withAtomicOutput {
       println()
       val EA = List(expect, actual).map(_.split("\n"))
       val List(es, as) = EA : @nowarn
       val lim = es.length max as.length
-      val List(maxAllE,_) = EA.map(x => (0 :: x.iterator.map(_.length).toList).max) : @nowarn
-      // val mismtachingLines = (es.iterator.zip(as.iterator)).filter { case (e,a) => e !=* a }.toList
-      // val maxDiffE = (0 :: mismtachingLines.map(_._1.length)).max
-      // val maxLimitE = 80
-      // val maxE = if (maxAllE <= maxLimitE) maxAllE else if (maxLimitE >= maxDiffE) maxLimitE else maxDiffE
-      val maxLimitE = 114 // TODO: Make configurable by moving into config class
-      // TODO: Make colours configurable by moving into config class
-      // TODO: Make diffing logic configurable by moving into config class
-      // TODO: Now I now why I keep finding the colours confusing! diff:red=del,green=add, assert:red=bad,green=good
+      val structureWidth = lim.toString.length + 7
+      val List(maxAllE, _) = EA.map(x => (0 :: x.iterator.map(_.length).toList).max) : @nowarn
+      val maxLimitE = (cfg.maxWidth - structureWidth) >> 1
       val maxE = maxAllE min maxLimitE
       val maxL = lim.toString.length
       if (maxL == 0 || maxE == 0)
         assertEqO(name, actual, expect)
       else {
+
         val nameSuffix = name.fold(RESET)(s":$RESET " + _)
-        val fmtWSE = GREEN_B + BLACK
-        val fmtWSA = RED_B + BLACK
-        val fmtKOE = BLACK_B + BOLD_BRIGHT_GREEN
-        val fmtKOA = BLACK_B + BOLD_BRIGHT_RED
+        val fmtWSE = cfg.colourWhitespaceDiffExpect
+        val fmtWSA = cfg.colourWhitespaceDiffActual
+        val fmtKOE = cfg.colourDiffExpect
+        val fmtKOA = cfg.colourDiffActual
         val cmp    = if (as.length == es.length) "|" else if (es.length > as.length) ">" else "<"
         println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix (${fmtKOE}expect$RESET $cmp ${fmtKOA}actual$RESET)")
 
-        if (as.length == es.length) {
+        val sideBySide =
+          (cfg.forceFlatDiff, cfg.forceSideBySideDiff, as.length == es.length) match {
+            case (false, true, _) => true
+            case (true, false, _) => false
+            case (_, _, sameLens) => sameLens
+          }
+
+        if (sideBySide) {
           val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxE}s | | %s${RESET}\n"
           val fmtWS = s"${WHITE}%${maxL}d: ${fmtWSE}%-${maxE}s${RESET}${WHITE} |≈| ${fmtWSA}%s${RESET}\n"
           val fmtKO = s"${WHITE}%${maxL}d: ${fmtKOE}%-${maxE}s${RESET}${WHITE} |≠| ${fmtKOA}%s${RESET}\n"
@@ -132,22 +149,13 @@ trait TestUtilWithoutUnivEq
           for (i <- 0 until lim) {
             val List(e, a) = EA.map(s => if (i >= s.length) "" else s(i)) : @nowarn
 
-            // val (fmt, a2, e2) =
-            //   if (a == e)
-            //     (fmtOK, a.take(maxA), e.take(maxA))
-            //   else if (removeWhitespace(a) == removeWhitespace(e))
-            //     (fmtWS, a.take(maxA), e.take(maxA))
-            //   else
-            //     (fmtKO, a, e)
-            // printf(fmt, i + 1, a2, e2)
-
             val (fmt, truncate) =
               if (a == e)
-                (fmtOK, true) // TODO: Make `true` configurable by moving into config class
+                (fmtOK, cfg.sideBySideTruncateLongLinesOnMatch)
               else if (removeWhitespace(a) == removeWhitespace(e))
-                (fmtWS, true) // TODO: Make `true` configurable by moving into config class
+                (fmtWS, cfg.sideBySideTruncateLongLinesOnWhitespaceDiff)
               else
-                (fmtKO, false) // TODO: Make `true` configurable by moving into config class
+                (fmtKO, cfg.sideBySideTruncateLongLinesOnDiff)
 
             val l = i + 1
             val w = maxE
@@ -492,6 +500,11 @@ trait TestUtilWithoutUnivEq
     }
   }
 
+  def assertError(body: => Any): Throwable =
+    Try(body) match {
+      case Failure(t) => t
+      case Success(b) => fail("Error expected but code completed with result: " + b)
+    }
 }
 
 trait TestUtil
@@ -499,4 +512,48 @@ trait TestUtil
      with japgolly.univeq.UnivEqExports
      with japgolly.univeq.UnivEqCats
 
-object TestUtil extends TestUtil
+object TestUtil extends TestUtil {
+
+  // TODO: Make diffing logic configurable by moving into config class
+  // TODO: Now I now why I keep finding the colours confusing! diff:red=del,green=add, assert:red=bad,green=good
+
+  case class AssertMultilineSettings(
+      colourDiffActual                           : String,
+      colourDiffExpect                           : String,
+      colourWhitespaceDiffActual                 : String,
+      colourWhitespaceDiffExpect                 : String,
+      forceFlatDiff                              : Boolean,
+      forceSideBySideDiff                        : Boolean,
+      maxWidth                                   : Int,
+      sideBySideTruncateLongLinesOnDiff          : Boolean,
+      sideBySideTruncateLongLinesOnMatch         : Boolean,
+      sideBySideTruncateLongLinesOnWhitespaceDiff: Boolean,
+  )
+
+  object AssertMultilineSettings {
+    val default = AssertMultilineSettings(
+      colourDiffActual                            = BLACK_B + BOLD_BRIGHT_RED,
+      colourDiffExpect                            = BLACK_B + BOLD_BRIGHT_GREEN,
+      colourWhitespaceDiffActual                  = RED_B + BLACK,
+      colourWhitespaceDiffExpect                  = GREEN_B + BLACK,
+      forceFlatDiff                               = false,
+      forceSideBySideDiff                         = false,
+      maxWidth                                    = 212,
+      sideBySideTruncateLongLinesOnDiff           = false,
+      sideBySideTruncateLongLinesOnMatch          = true,
+      sideBySideTruncateLongLinesOnWhitespaceDiff = true,
+    )
+  }
+
+  object TestUtilGlobalSettings {
+    class Ref[A](init: A) {
+      var value: A = init
+      def modify(f: A => A): A = {
+        value = f(value)
+        value
+      }
+    }
+
+    val assertMultiline = new Ref(AssertMultilineSettings.default)
+  }
+}
