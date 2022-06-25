@@ -148,7 +148,7 @@ object Microlibs {
     .settings(
       moduleName := "compile-time",
       scalacOptions --= Seq("-source:3.0-migration"),
-      libraryDependencies ++= Seq(Dep.sourceCode.value).filterNot(_ => scalaVersion.value.startsWith("3")))
+      libraryDependencies += Dep.sourceCode.value)
 
   lazy val disjunctionJVM = disjunction.jvm
   lazy val disjunctionJS  = disjunction.js
