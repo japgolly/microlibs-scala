@@ -16,7 +16,7 @@ trait TestUtilWithoutUnivEq
        with TypeTestingUtil
        with TestUtilImplicits {
 
-  import TestUtil._
+  import TestUtil.{AssertMultilineSettings, TestUtilGlobalSettings}
 
   def withAtomicOutput[A](a: => A): A = {
     val os = new ByteArrayOutputStream()
@@ -115,10 +115,10 @@ trait TestUtilWithoutUnivEq
     if (actual != expect) withAtomicOutput {
       println()
       val EA = List(expect, actual).map(_.split("\n"))
-      val List(es, as) = EA : @nowarn
+      val List(es, as) = EA
       val lim = es.length max as.length
       val structureWidth = lim.toString.length + 7
-      val List(maxAllE, _) = EA.map(x => (0 :: x.iterator.map(_.length).toList).max) : @nowarn
+      val List(maxAllE, _) = EA.map(x => (0 :: x.iterator.map(_.length).toList).max)
       val maxLimitE = (cfg.maxWidth - structureWidth) >> 1
       val maxE = maxAllE min maxLimitE
       val maxL = lim.toString.length
@@ -147,7 +147,7 @@ trait TestUtilWithoutUnivEq
           val fmtKO = s"${WHITE}%${maxL}d: ${fmtKOE}%-${maxE}s${RESET}${WHITE} |≠| ${fmtKOA}%s${RESET}\n"
           def removeWhitespace(s: String) = s.filterNot(_.isWhitespace)
           for (i <- 0 until lim) {
-            val List(e, a) = EA.map(s => if (i >= s.length) "" else s(i)) : @nowarn
+            val List(e, a) = EA.map(s => if (i >= s.length) "" else s(i))
 
             val (fmt, truncate) =
               if (a == e)

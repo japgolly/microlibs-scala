@@ -16,11 +16,11 @@ object TestUtilTest extends TestSuite {
           a <- all
           b <- all
         } {
-          // try
-          //   assertMultiline(a, b)
-          // catch {
-          //   case _: java.lang.AssertionError => ()
-          // }
+          try
+            assertMultiline(a, b)
+          catch {
+            case _: java.lang.AssertionError => ()
+          }
         }
       }
 
