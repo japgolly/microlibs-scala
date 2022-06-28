@@ -8,7 +8,7 @@ object QuotingUtils:
 
   def warn(warning: Expr[String])(using Quotes): Expr[Unit] =
     import quotes.reflect.*
-    report.warning(warning.valueOrError)
+    report.warning(warning.valueOrAbort)
     Expr.inlineConstUnit
 
   def replaceFirst(str: Expr[String], regex: Expr[String], repl: Expr[String])(using Quotes): Expr[String] =

@@ -24,6 +24,8 @@ object Microlibs {
     "-language:implicitConversions",
     "-language:higherKinds",
     "-language:existentials",
+    "-Wconf:msg=may.not.be.exhaustive:e",            // Make non-exhaustive matches errors instead of warnings
+    "-Wconf:msg=Reference.to.uninitialized.value:e", // Make uninitialised value calls errors instead of warnings
   )
 
   def scalac2Flags = Seq(
@@ -37,6 +39,7 @@ object Microlibs {
 
   def scalac3Flags = Seq(
     "-source:3.0-migration",
+    "-Wconf:msg=unused:s", // Scala 3.1 doesn't support @nowarn("cat=unused")
     "-Ykind-projector",
   )
 
@@ -145,7 +148,7 @@ object Microlibs {
     .settings(
       moduleName := "compile-time",
       scalacOptions --= Seq("-source:3.0-migration"),
-      libraryDependencies ++= Seq(Dep.sourceCode.value).filterNot(_ => scalaVersion.value.startsWith("3")))
+      libraryDependencies += Dep.sourceCode.value)
 
   lazy val disjunctionJVM = disjunction.jvm
   lazy val disjunctionJS  = disjunction.js

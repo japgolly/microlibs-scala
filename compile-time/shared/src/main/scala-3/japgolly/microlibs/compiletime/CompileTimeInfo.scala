@@ -80,28 +80,28 @@ object CompileTimeInfo {
 
     def envVarOrNull(key: Expr[String])(using Quotes): Expr[String] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getEnvVar(k)
       Expr(v.orNull)
     }
 
     def sysPropOrNull(key: Expr[String])(using Quotes): Expr[String] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getSysProp(k)
       Expr(v.orNull)
     }
 
     def envVarOrSysPropOrNull(key: Expr[String])(using Quotes): Expr[String] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getEnvVar(k) orElse getSysProp(k)
       Expr(v.orNull)
     }
 
     def sysPropOrEnvVarOrNull(key: Expr[String])(using Quotes): Expr[String] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getSysProp(k) orElse getEnvVar(k)
       Expr(v.orNull)
     }
@@ -110,28 +110,28 @@ object CompileTimeInfo {
 
     def envVar(key: Expr[String])(using Quotes): Expr[Option[String]] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getEnvVar(k)
       Expr(v)
     }
 
     def sysProp(key: Expr[String])(using Quotes): Expr[Option[String]] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getSysProp(k)
       Expr(v)
     }
 
     def envVarOrSysProp(key: Expr[String])(using Quotes): Expr[Option[String]] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getEnvVar(k) orElse getSysProp(k)
       Expr(v)
     }
 
     def sysPropOrEnvVar(key: Expr[String])(using Quotes): Expr[Option[String]] = {
       import quotes.reflect.*
-      val k = key.valueOrError
+      val k = key.valueOrAbort
       val v = getSysProp(k) orElse getEnvVar(k)
       Expr(v)
     }

@@ -6,14 +6,17 @@ import japgolly.microlibs.testutil.TestUtilInternals._
 import japgolly.univeq.UnivEq
 import japgolly.univeq.UnivEqCats.catsEqFromUnivEq
 import java.io.ByteArrayOutputStream
-import scala.annotation.tailrec
+import scala.annotation._
 import scala.io.AnsiColor._
+import scala.util.{Failure, Success, Try}
 import sourcecode.Line
 
 trait TestUtilWithoutUnivEq
     extends ScalaVerSpecificTestUtil
        with TypeTestingUtil
        with TestUtilImplicits {
+
+  import TestUtil.{AssertMultilineSettings, TestUtilGlobalSettings}
 
   def withAtomicOutput[A](a: => A): A = {
     val os = new ByteArrayOutputStream()
@@ -91,39 +94,85 @@ trait TestUtilWithoutUnivEq
       fail2("assertNotEq", name)("expect not", BOLD_BRIGHT_BLUE, expectNot)("actual", BOLD_BRIGHT_RED, actual)
 
   def assertMultiline(actual: String, expect: String)(implicit q: Line): Unit =
-    _assertMultiline(None, actual, expect)
+    _assertMultiline(None, actual, expect, TestUtilGlobalSettings.assertMultiline.value)
 
   def assertMultiline(name: => String, actual: String, expect: String)(implicit q: Line): Unit =
-    _assertMultiline(Some(name), actual, expect)
+    _assertMultiline(Some(name), actual, expect, TestUtilGlobalSettings.assertMultiline.value)
 
-  private def _assertMultiline(name: => Option[String], actual: String, expect: String)(implicit q: Line): Unit =
+  def assertMultiline(actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(None, actual, expect, cfg)
+
+  def assertMultiline(name: => String, actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(Some(name), actual, expect, cfg)
+
+  def assertMultiline(actual: String, expect: String, cfg: AssertMultilineSettings => AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(None, actual, expect, cfg(TestUtilGlobalSettings.assertMultiline.value))
+
+  def assertMultiline(name: => String, actual: String, expect: String, cfg: AssertMultilineSettings => AssertMultilineSettings)(implicit q: Line): Unit =
+    _assertMultiline(Some(name), actual, expect, cfg(TestUtilGlobalSettings.assertMultiline.value))
+
+  private def _assertMultiline(name: => Option[String], actual: String, expect: String, cfg: AssertMultilineSettings)(implicit q: Line): Unit =
     if (actual != expect) withAtomicOutput {
       println()
-      val AE = List(actual, expect).map(_.split("\n"))
-      val List(as, es) = AE
-      val lim = as.length max es.length
-      val List(maxA,_) = AE.map(x => (0 :: x.iterator.map(_.length).toList).max)
+      val EA = List(expect, actual).map(_.split("\n"))
+      val List(es, as) = EA
+      val lim = es.length max as.length
+      val structureWidth = lim.toString.length + 7
+      val List(maxAllE, _) = EA.map(x => (0 :: x.iterator.map(_.length).toList).max)
+      val maxLimitE = (cfg.maxWidth - structureWidth) >> 1
+      val maxE = maxAllE min maxLimitE
       val maxL = lim.toString.length
-      if (maxL == 0 || maxA == 0)
+      if (maxL == 0 || maxE == 0)
         assertEqO(name, actual, expect)
       else {
-        val nameSuffix = name.fold("")(": " + _)
-        if (as.length == es.length) {
-          println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix$RESET (actual | expect)")
-          val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxA}s | | %s${RESET}\n"
-          val fmtWS = s"${WHITE}%${maxL}d: ${RED_B}${BLACK}%-${maxA}s${RESET}${WHITE} |≈| ${GREEN_B}${BLACK}%s${RESET}\n"
-          val fmtKO = s"${WHITE}%${maxL}d: ${BOLD_BRIGHT_RED}%-${maxA}s${RESET}${WHITE} |≠| ${BOLD_BRIGHT_GREEN}%s${RESET}\n"
+
+        val nameSuffix = name.fold(RESET)(s":$RESET " + _)
+        val fmtWSE = cfg.colourWhitespaceDiffExpect
+        val fmtWSA = cfg.colourWhitespaceDiffActual
+        val fmtKOE = cfg.colourDiffExpect
+        val fmtKOA = cfg.colourDiffActual
+        val cmp    = if (as.length == es.length) "|" else if (es.length > as.length) ">" else "<"
+        println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix (${fmtKOE}expect$RESET $cmp ${fmtKOA}actual$RESET)")
+
+        val sideBySide =
+          (cfg.forceFlatDiff, cfg.forceSideBySideDiff, as.length == es.length) match {
+            case (false, true, _) => true
+            case (true, false, _) => false
+            case (_, _, sameLens) => sameLens
+          }
+
+        if (sideBySide) {
+          val fmtOK = s"${BRIGHT_BLACK}%${maxL}d: %-${maxE}s | | %s${RESET}\n"
+          val fmtWS = s"${WHITE}%${maxL}d: ${fmtWSE}%-${maxE}s${RESET}${WHITE} |≈| ${fmtWSA}%s${RESET}\n"
+          val fmtKO = s"${WHITE}%${maxL}d: ${fmtKOE}%-${maxE}s${RESET}${WHITE} |≠| ${fmtKOA}%s${RESET}\n"
           def removeWhitespace(s: String) = s.filterNot(_.isWhitespace)
           for (i <- 0 until lim) {
-            val List(a, e) = AE.map(s => if (i >= s.length) "" else s(i))
-            val fmt =
-              if (a == e) fmtOK
-              else if (removeWhitespace(a) == removeWhitespace(e)) fmtWS
-              else fmtKO
-            printf(fmt, i + 1, a, e)
+            val List(e, a) = EA.map(s => if (i >= s.length) "" else s(i))
+
+            val (fmt, truncate) =
+              if (a == e)
+                (fmtOK, cfg.sideBySideTruncateLongLinesOnMatch)
+              else if (removeWhitespace(a) == removeWhitespace(e))
+                (fmtWS, cfg.sideBySideTruncateLongLinesOnWhitespaceDiff)
+              else
+                (fmtKO, cfg.sideBySideTruncateLongLinesOnDiff)
+
+            val l = i + 1
+            val w = maxE
+            @tailrec def go(x: String, y: String, fmt2: Option[String]): Unit = {
+              fmt2 match {
+                case None    => printf(fmt, l, x.take(w), y.take(w))
+                case Some(f) => printf(f, x.take(w), y.take(w))
+              }
+              val hasMore = (x.length max y.length) > w
+              if (hasMore && !truncate) {
+                def newFmt = fmt.replace(s"%${maxL}d:", " " * (maxL + 1))
+                go(x.drop(w), y.drop(w), fmt2.orElse(Some(newFmt)))
+              }
+            }
+            go(e, a, None)
           }
         } else {
-          println(s"${BRIGHT_YELLOW}assertMultiline$nameSuffix$RESET")
           println(LineDiff(expect, actual).expectActualColoured)
           println(BRIGHT_YELLOW + ("-" * 120) + RESET)
         }
@@ -451,6 +500,11 @@ trait TestUtilWithoutUnivEq
     }
   }
 
+  def assertError(body: => Any): Throwable =
+    Try(body) match {
+      case Failure(t) => t
+      case Success(b) => fail("Error expected but code completed with result: " + b)
+    }
 }
 
 trait TestUtil
@@ -458,4 +512,48 @@ trait TestUtil
      with japgolly.univeq.UnivEqExports
      with japgolly.univeq.UnivEqCats
 
-object TestUtil extends TestUtil
+object TestUtil extends TestUtil {
+
+  // TODO: Make diffing logic configurable by moving into config class
+  // TODO: Now I now why I keep finding the colours confusing! diff:red=del,green=add, assert:red=bad,green=good
+
+  case class AssertMultilineSettings(
+      colourDiffActual                           : String,
+      colourDiffExpect                           : String,
+      colourWhitespaceDiffActual                 : String,
+      colourWhitespaceDiffExpect                 : String,
+      forceFlatDiff                              : Boolean,
+      forceSideBySideDiff                        : Boolean,
+      maxWidth                                   : Int,
+      sideBySideTruncateLongLinesOnDiff          : Boolean,
+      sideBySideTruncateLongLinesOnMatch         : Boolean,
+      sideBySideTruncateLongLinesOnWhitespaceDiff: Boolean,
+  )
+
+  object AssertMultilineSettings {
+    val default = AssertMultilineSettings(
+      colourDiffActual                            = BLACK_B + BOLD_BRIGHT_RED,
+      colourDiffExpect                            = BLACK_B + BOLD_BRIGHT_GREEN,
+      colourWhitespaceDiffActual                  = RED_B + BLACK,
+      colourWhitespaceDiffExpect                  = GREEN_B + BLACK,
+      forceFlatDiff                               = false,
+      forceSideBySideDiff                         = false,
+      maxWidth                                    = 212,
+      sideBySideTruncateLongLinesOnDiff           = false,
+      sideBySideTruncateLongLinesOnMatch          = true,
+      sideBySideTruncateLongLinesOnWhitespaceDiff = true,
+    )
+  }
+
+  object TestUtilGlobalSettings {
+    class Ref[A](init: A) {
+      var value: A = init
+      def modify(f: A => A): A = {
+        value = f(value)
+        value
+      }
+    }
+
+    val assertMultiline = new Ref(AssertMultilineSettings.default)
+  }
+}

@@ -1,6 +1,6 @@
 package japgolly.microlibs.compiletime
 
-import scala.annotation.targetName
+import scala.annotation._
 import scala.quoted.*
 
 object MacroEnvStatic {
@@ -24,7 +24,7 @@ object MacroEnv {
 
   def fail(msg: String)(using Quotes): Nothing =
     import quotes.reflect.*
-    quotes.reflect.report.throwError(msg, Position.ofMacroExpansion)
+    quotes.reflect.report.errorAndAbort(msg, Position.ofMacroExpansion)
 
   def failNoStack(msg: String): Nothing = {
     val e = new RuntimeException(msg)
@@ -46,7 +46,7 @@ object MacroEnv {
       import quotes.reflect.*
       Implicits.search(TypeRepr.of[A]) match
         case iss: ImplicitSearchSuccess => iss.tree.asExpr.asInstanceOf[Expr[A]]
-        case isf: ImplicitSearchFailure => report.throwError(isf.explanation)
+        case isf: ImplicitSearchFailure => report.errorAndAbort(isf.explanation)
 
     def inlineConstNull(using Quotes): Expr[Null] =
       import quotes.reflect.*
@@ -133,6 +133,11 @@ object MacroEnv {
 
     def prependPrintln(msg: Expr[String])(using Quotes, Type[A]): Expr[A] =
       prepend('{ println($msg) })
+
+    def uninline(using Quotes, Type[A]): Expr[A] = {
+      import quotes.reflect.*
+      uninlineTerm(self.asTerm).asExprOf[A]
+    }
   }
 
   // ===================================================================================================================
@@ -174,21 +179,32 @@ object MacroEnv {
   }
 
   // ===================================================================================================================
-  extension [A](self: Type[A]) {
-
+  extension [A <: AnyKind](self: Type[A]) {
     def dealias(using Quotes): Type[A] =
       _type_dealias[A](using self)
 
+    def isUnit(using Quotes): Boolean =
+      self match {
+        case '[Unit] => true
+        case _       => false
+      }
+  }
+
+  extension [A](self: Type[A]) {
     def summonOrError(using Quotes): Expr[A] =
       Expr.summonOrError[A](using self)
   }
 
-  private def _type_dealias[A](using Type[A])(using Quotes): Type[A] =
+  private def _type_dealias[A <: AnyKind](using Type[A])(using Quotes): Type[A] =
     import quotes.reflect.*
     TypeRepr.of[A].dealias.asType.asInstanceOf[Type[A]]
 
   // ===================================================================================================================
   extension (using q: Quotes)(self: q.reflect.TypeRepr) {
+
+    @targetName("asTypeOf_TypeRepr")
+    def asTypeOf[A <: AnyKind]: Type[A] =
+      self.asType.asInstanceOf[Type[A]]
 
     def asTypeTree: q.reflect.TypeTree =
       q.reflect.TypeTree.of(using self.asType)
@@ -211,8 +227,12 @@ object MacroEnv {
   // ===================================================================================================================
   extension (using q: Quotes)(self: q.reflect.TypeTree) {
 
-    inline def asType: Type[?] =
+    def asType: Type[?] =
       self.tpe.asType
+
+    @targetName("asTypeOf_TypeTree")
+    def asTypeOf[A <: AnyKind]: Type[A] =
+      self.asType.asInstanceOf[Type[A]]
 
     @targetName("summon_TypeTree")
     def summon: Option[Expr[?]] =
@@ -259,8 +279,25 @@ object MacroEnv {
         val a = self.tpe.show
         val msg = s"Can't convert $a to ${Type.show[B]}"
         import quotes.reflect.*
-        report.throwError(msg, Position.ofMacroExpansion)
+        report.errorAndAbort(msg, Position.ofMacroExpansion)
       }
+
+    def betaReduce: q.reflect.Term = {
+      import quotes.reflect.*
+      Term.betaReduce(self).getOrElse(self)
+    }
+
+    def uninline: q.reflect.Term =
+      uninlineTerm(self)
+  }
+
+  @tailrec
+  private def uninlineTerm(using q: Quotes)(self: q.reflect.Term): q.reflect.Term = {
+    import quotes.reflect.*
+    self match {
+      case Inlined(_, _, e) => uninlineTerm(e)
+      case _                => self
+    }
   }
 
   // ===================================================================================================================
