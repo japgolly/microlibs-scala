@@ -202,6 +202,10 @@ object MacroEnv {
   // ===================================================================================================================
   extension (using q: Quotes)(self: q.reflect.TypeRepr) {
 
+    @targetName("asTypeOf_TypeRepr")
+    def asTypeOf[A <: AnyKind]: Type[A] =
+      self.asType.asInstanceOf[Type[A]]
+
     def asTypeTree: q.reflect.TypeTree =
       q.reflect.TypeTree.of(using self.asType)
 
@@ -226,6 +230,7 @@ object MacroEnv {
     def asType: Type[?] =
       self.tpe.asType
 
+    @targetName("asTypeOf_TypeTree")
     def asTypeOf[A <: AnyKind]: Type[A] =
       self.asType.asInstanceOf[Type[A]]
 
