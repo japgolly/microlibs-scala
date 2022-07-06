@@ -7,7 +7,7 @@ object Dependencies {
   object Ver {
 
     // Exported
-    def cats            = "2.7.0"
+    def cats            = "2.8.0"
     def scala2          = "2.13.8"
     def scala3          = "3.1.2"
     def sourceCode      = "0.2.8"
