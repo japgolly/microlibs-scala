@@ -10,7 +10,7 @@ object Dependencies {
     def cats            = "2.7.0"
     def scala2          = "2.13.8"
     def scala3          = "3.1.2"
-    def sourceCode      = "0.2.8"
+    def sourceCode      = "0.3.0"
     def univEq          = "2.0.0"
 
     // Internal
