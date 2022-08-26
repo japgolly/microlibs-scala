@@ -6,10 +6,10 @@ import japgolly.microlibs.stdlib_ext.MutableArray
 import japgolly.univeq.UnivEq
 
 object IMap {
-  implicit def catsEq[K, V: Eq]: Eq[IMap[K, V]] =
+  @inline implicit def catsEq[K, V: Eq]: Eq[IMap[K, V]] =
     IMapBaseV.catsEq[K, V, IMap[K, V]]
 
-  implicit def univEq[K, V](implicit u: UnivEq[Map[K, V]]): UnivEq[IMap[K, V]] =
+  @inline implicit def univEq[K, V](implicit u: UnivEq[Map[K, V]]): UnivEq[IMap[K, V]] =
     IMapBaseV.univEq[K, V, V, IMap[K, V]](u)
 
   implicit def nonEmptyProof[K, V]: NonEmpty.ProofMono[IMap[K, V]] =
