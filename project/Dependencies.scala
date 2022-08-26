@@ -7,10 +7,10 @@ object Dependencies {
   object Ver {
 
     // Exported
-    def cats            = "2.7.0"
+    def cats            = "2.8.0"
     def scala2          = "2.13.8"
-    def scala3          = "3.1.2"
-    def sourceCode      = "0.2.8"
+    def scala3          = "3.1.3"
+    def sourceCode      = "0.3.0"
     def univEq          = "2.0.0"
 
     // Internal
@@ -19,7 +19,7 @@ object Dependencies {
     def nyaya           = "1.0.0"
     def scalaCheck      = "1.15.4"
     def scalaJsJavaTime = "1.0.0"
-    def utest           = "0.7.11"
+    def utest           = "0.8.0"
   }
 
   object Dep {
