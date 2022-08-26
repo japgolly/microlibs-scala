@@ -9,7 +9,7 @@ import scala.annotation.{elidable, nowarn}
 import scala.collection.IterableOnce
 
 object IMapBaseV {
-  def catsEq[K, V: Eq, M <: IMapBaseV[K, _, V, M]]: Eq[M] =
+  def catsEq[K, VI, VO: Eq, M <: IMapBaseV[K, VI, VO, M]]: Eq[M] =
     Eq.by(_.underlyingMap)
 
   @inline def univEq[K, VI, VO, I <: IMapBaseV[K, VI, VO, I]](implicit @nowarn("cat=unused") u: UnivEq[Map[K, VO]]): UnivEq[I] =

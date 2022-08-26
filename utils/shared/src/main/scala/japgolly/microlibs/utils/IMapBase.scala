@@ -5,7 +5,7 @@ import japgolly.univeq.UnivEq
 
 object IMapBase {
   @inline def catsEq[K, V: Eq, M <: IMapBase[K, V, M]]: Eq[M] =
-    IMapBaseV.catsEq[K, V, M]
+    IMapBaseV.catsEq[K, V, V, M]
 
   @inline def univEq[K, V, I <: IMapBase[K, V, I]](implicit u: UnivEq[Map[K, V]]): UnivEq[I] =
     IMapBaseV.univEq[K, V, V, I]

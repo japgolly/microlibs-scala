@@ -7,10 +7,10 @@ import japgolly.univeq.UnivEq
 
 object IMap {
   @inline implicit def catsEq[K, V: Eq]: Eq[IMap[K, V]] =
-    IMapBaseV.catsEq[K, V, IMap[K, V]]
+    IMapBase.catsEq[K, V, IMap[K, V]]
 
   @inline implicit def univEq[K, V](implicit u: UnivEq[Map[K, V]]): UnivEq[IMap[K, V]] =
-    IMapBaseV.univEq[K, V, V, IMap[K, V]](u)
+    IMapBase.univEq[K, V, IMap[K, V]](u)
 
   implicit def nonEmptyProof[K, V]: NonEmpty.ProofMono[IMap[K, V]] =
     NonEmpty.Proof.testEmptiness(_.isEmpty)
