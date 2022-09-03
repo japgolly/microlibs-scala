@@ -217,6 +217,7 @@ object Microlibs {
         Dep.univEq    .value,
         Dep.univEqCats.value,
       ))
+    .jsSettings(libraryDependencies += Dep.scalaJsJavaTime.value % Test)
 
   lazy val typesJVM = types.jvm
   lazy val typesJS  = types.js
