@@ -17,7 +17,7 @@ object Dependencies {
     def jamm            = "0.3.3"
     def kindProjector   = "0.13.2"
     def nyaya           = "1.0.0"
-    def scalaCheck      = "1.15.4"
+    def scalaCheck      = "1.16.0"
     def scalaJsJavaTime = "2.4.0"
     def utest           = "0.8.0"
   }
