@@ -13,6 +13,15 @@ final class SetOnceVar[A] {
         a
       }
     }
+
+  def getOption(): Option[A] =
+    synchronized(instance)
+
+  def getOrThrow(): A =
+    getOrThrow("SetOnceVar not yet set.")
+
+  def getOrThrow(errMsg: => String): A =
+    getOption().getOrElse(throw new RuntimeException(errMsg))
 }
 
 object SetOnceVar {
