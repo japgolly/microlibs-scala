@@ -3,10 +3,17 @@ name: CI
 on:
   pull_request:
   push:
+    branches:
+      - '**'
+    tags-ignore:
+      - v*.*.*
 
 jobs:
+
   ci:
+    name: Scala v${{ matrix.scala }} / Java v${{ matrix.java }}
     runs-on: ubuntu-latest
+
     strategy:
       matrix:
         include:
@@ -14,9 +21,8 @@ jobs:
             scala: 2
           - java: 8
             scala: 3
-    name: Scala v${{ matrix.scala }} / Java v${{ matrix.java }}
-    steps:
 
+    steps:
       - name: Git checkout
         uses: actions/checkout@v3
 

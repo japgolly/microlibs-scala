@@ -4,6 +4,8 @@ ThisBuild / licenses      += ("Apache-2.0", url("http://opensource.org/licenses/
 ThisBuild / shellPrompt   := ((s: State) => Project.extract(s).currentRef.project + "> ")
 ThisBuild / versionScheme := Some("early-semver")
 
+sonatypeProfileName := "com.github.japgolly"
+
 val root           = Microlibs.root
 val rootJVM        = Microlibs.rootJVM
 val rootJS         = Microlibs.rootJS

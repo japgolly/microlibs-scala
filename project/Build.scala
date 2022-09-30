@@ -5,7 +5,6 @@ import org.portablescala.sbtplatformdeps.PlatformDepsPlugin.autoImport._
 import pl.project13.scala.sbt.JmhPlugin
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
-import sbtrelease.ReleasePlugin.autoImport._
 import Lib._
 
 object Microlibs {
@@ -42,18 +41,15 @@ object Microlibs {
 
   val commonSettings = ConfigureBoth(
     _.settings(
-      scalaVersion                  := Ver.scala2,
-      crossScalaVersions            := Seq(Ver.scala2, Ver.scala3),
-      scalacOptions                ++= scalacCommonFlags,
-      scalacOptions                ++= scalac2Flags.filter(_ => scalaVersion.value.startsWith("2")),
-      scalacOptions                ++= scalac3Flags.filter(_ => scalaVersion.value.startsWith("3")),
-      Test / scalacOptions         --= Seq("-Ywarn-dead-code"),
-      testFrameworks                := Nil,
-      updateOptions                 := updateOptions.value.withCachedResolution(true),
-      releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-      releaseTagComment             := s"v${(ThisBuild / version).value}",
-      releaseVcsSign                := true,
-      libraryDependencies          ++= Seq(Dep.kindProjector).filterNot(_ => scalaVersion.value.startsWith("3")),
+      scalaVersion          := Ver.scala2,
+      crossScalaVersions    := Seq(Ver.scala2, Ver.scala3),
+      scalacOptions        ++= scalacCommonFlags,
+      scalacOptions        ++= scalac2Flags.filter(_ => scalaVersion.value.startsWith("2")),
+      scalacOptions        ++= scalac3Flags.filter(_ => scalaVersion.value.startsWith("3")),
+      Test / scalacOptions --= Seq("-Ywarn-dead-code"),
+      testFrameworks        := Nil,
+      updateOptions         := updateOptions.value.withCachedResolution(true),
+      libraryDependencies  ++= Seq(Dep.kindProjector).filterNot(_ => scalaVersion.value.startsWith("3")),
   ))
 
   def definesMacros = ConfigureBoth(
