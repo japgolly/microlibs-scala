@@ -8,6 +8,9 @@ trait TestUtilImplicits {
 
   implicit def toTestUtilEitherExt[A, B](x: Either[A, B])(implicit l: Line): EitherExt[A, B] =
     new EitherExt(x)
+
+  implicit def toTestUtilOptionExt[A](x: Option[A])(implicit l: Line): OptionExt[A] =
+    new OptionExt(x)
 }
 
 object TestUtilImplicits {
@@ -25,5 +28,10 @@ object TestUtilImplicits {
 
     def getLeftOrThrow(moreInfo: => String): A =
       self.fold(identity, e => fail(s"${moreInfo.replaceFirst("\\.?$", ".")} Expected Left(_), found Right($e)"))
+  }
+
+  implicit class OptionExt[A](private val self: Option[A])(implicit l: Line) {
+    def getOrThrow(moreInfo: => String): A =
+      self.getOrElse(fail(s"${moreInfo.replaceFirst("\\.?$", ".")} Expected Some(_), found None"))
   }
 }
