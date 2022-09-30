@@ -1,6 +1,6 @@
 ThisBuild / scalafixScalaBinaryVersion := "2.13"
 ThisBuild / semanticdbEnabled          := true
-ThisBuild / semanticdbVersion          := "4.5.5"
+ThisBuild / semanticdbVersion          := "4.6.0"
 
 ThisBuild / scalacOptions ++= {
   if (scalaVersion.value startsWith "2")
