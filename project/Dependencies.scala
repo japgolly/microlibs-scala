@@ -8,18 +8,18 @@ object Dependencies {
 
     // Exported
     def cats            = "2.8.0"
-    def scala2          = "2.13.8"
-    def scala3          = "3.1.3"
+    def scala2          = "2.13.9"
+    def scala3          = "3.2.0"
     def sourceCode      = "0.3.0"
-    def univEq          = "2.0.0"
+    def univEq          = "2.0.1"
 
     // Internal
     def jamm            = "0.3.3"
     def kindProjector   = "0.13.2"
-    def nyaya           = "1.0.0"
-    def scalaCheck      = "1.15.4"
+    def nyaya           = "1.1.0"
+    def scalaCheck      = "1.17.0"
     def scalaJsJavaTime = "2.4.0"
-    def utest           = "0.8.0"
+    def utest           = "0.8.1"
   }
 
   object Dep {
