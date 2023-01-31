@@ -9,7 +9,7 @@ object Dependencies {
     // Exported
     def cats            = "2.8.0"
     def scala2          = "2.13.9"
-    def scala3          = "3.2.0"
+    def scala3          = "3.2.2"
     def sourceCode      = "0.3.0"
     def univEq          = "2.0.1"
 
