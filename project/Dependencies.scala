@@ -14,7 +14,7 @@ object Dependencies {
     def univEq          = "2.0.1"
 
     // Internal
-    def jamm            = "0.3.3"
+    def jamm            = "0.4.0"
     def kindProjector   = "0.13.2"
     def nyaya           = "1.1.0"
     def scalaCheck      = "1.17.0"
