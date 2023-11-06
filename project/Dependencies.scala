@@ -19,7 +19,7 @@ object Dependencies {
     def nyaya           = "1.1.0"
     def scalaCheck      = "1.17.0"
     def scalaJsJavaTime = "2.4.0"
-    def utest           = "0.8.1"
+    def utest           = "0.8.2"
   }
 
   object Dep {
