@@ -180,7 +180,7 @@ final class NonEmptyVector[+A](val head: A, val tail: Vector[A]) {
   def partitionB(f: A => Boolean): (NonEmptyVector[A], Vector[A]) = {
     var ts = Vector.empty[A]
     var fs = Vector.empty[A]
-    for (a <- tail)
+    for (a <- whole)
       if (f(a))
         ts :+= a
       else
