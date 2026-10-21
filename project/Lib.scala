@@ -5,7 +5,6 @@ import org.scalajs.sbtplugin.ScalaJSPlugin._
 import sbtcrossproject.CrossProject
 import sbtcrossproject.CrossPlugin.autoImport._
 import scalajscrossproject.ScalaJSCrossPlugin.autoImport._
-import xerial.sbt.Sonatype.autoImport._
 
 object Lib {
   type CPE = CrossProject => CrossProject
