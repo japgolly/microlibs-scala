@@ -67,7 +67,7 @@ object ParseChronoUnit {
 
 object ParseDuration {
 
-  private val eachS = "(?:(-?\\d+)\\s*([a-zA-Z]+))"
+  private val eachS = "(?:(-?\\d+)\\s*([a-zA-Zμ]+))"
   private val each = eachS.r
   private val all = s"$eachS(?:(?:\\s|,)*$eachS)*".r.pattern
 
