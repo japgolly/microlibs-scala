@@ -74,7 +74,7 @@ trait PlatformSpecificEscapeUtils { self: EscapeUtils.type =>
 
   def htmlEscape(s: String): String = {
     val sb = new JStringBuilder(s.length << 1)
-    appendQuoted(sb, s)
+    htmlAppendEscaped(sb, s)
     sb.toString
   }
 
