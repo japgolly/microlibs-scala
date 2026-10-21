@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - '**'
+      - 'main'
     tags-ignore:
       - v*.*.*
 
@@ -24,10 +24,10 @@ jobs:
 
     steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Scala
-        uses: japgolly/setup-everything-scala@v3.1
+        uses: japgolly/setup-everything-scala@v4.1
         with:
           java-version: adopt@1.${{ matrix.java }}
 
