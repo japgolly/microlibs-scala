@@ -24,7 +24,7 @@ object MacroEnv {
 
   def fail(msg: String)(using Quotes): Nothing =
     import quotes.reflect.*
-    quotes.reflect.report.throwError(msg, Position.ofMacroExpansion)
+    quotes.reflect.report.errorAndAbort(msg, Position.ofMacroExpansion)
 
   def failNoStack(msg: String): Nothing = {
     val e = new RuntimeException(msg)
@@ -46,7 +46,7 @@ object MacroEnv {
       import quotes.reflect.*
       Implicits.search(TypeRepr.of[A]) match
         case iss: ImplicitSearchSuccess => iss.tree.asExpr.asInstanceOf[Expr[A]]
-        case isf: ImplicitSearchFailure => report.throwError(isf.explanation)
+        case isf: ImplicitSearchFailure => report.errorAndAbort(isf.explanation)
 
     def inlineConstNull(using Quotes): Expr[Null] =
       import quotes.reflect.*
@@ -259,7 +259,7 @@ object MacroEnv {
         val a = self.tpe.show
         val msg = s"Can't convert $a to ${Type.show[B]}"
         import quotes.reflect.*
-        report.throwError(msg, Position.ofMacroExpansion)
+        report.errorAndAbort(msg, Position.ofMacroExpansion)
       }
   }
 

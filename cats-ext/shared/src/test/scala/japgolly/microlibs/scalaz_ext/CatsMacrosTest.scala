@@ -1,10 +1,8 @@
 package japgolly.microlibs.cats_ext
 
 import cats.Eq
-import scala.annotation.nowarn
 import utest._
 
-@nowarn("cat=unused")
 object CatsMacrosTest extends TestSuite {
 
   sealed abstract class X[+E, +A]
