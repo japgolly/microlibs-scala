@@ -13,7 +13,7 @@ final class NonEmptySet[A] private[nonempty] (val head: A, val tail: Set[A]) {
 
   override def toString = "NonEmpty" + whole.toString
 
-  override def hashCode = head.## * 31 + tail.##
+  override def hashCode = whole.hashCode
 
   override def equals(o: Any) = o match {
     case that: NonEmptySet[_] => this.whole == that.whole
