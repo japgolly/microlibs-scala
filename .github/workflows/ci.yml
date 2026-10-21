@@ -17,9 +17,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - java: 14
+          - java: 17
             scala: 2
-          - java: 8
+          - java: 17
             scala: 3
 
     steps:
