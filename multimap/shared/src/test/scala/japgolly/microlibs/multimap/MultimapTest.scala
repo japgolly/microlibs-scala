@@ -86,5 +86,45 @@ object MultimapTest extends TestSuite {
   //   "vector"   - genVector  .mustSatisfyE(_.eval)
   //   "arraySeq" - genArraySeq.mustSatisfyE(_.eval)
     // TODO: Port MultimapTest to ScalaCheck
+
+    "delv" - {
+      "removesEmptyKey" - {
+        val mm = Multimap(Map(1 -> Set("a"), 2 -> Set("a", "b")))
+        val mm2 = mm.delv("a")
+        assert(mm2.keyCount == 1)
+        assert(mm2.keys.toList == List(2))
+        assert(!mm2.m.contains(1))
+        assert(mm2(1).isEmpty)
+      }
+
+      "emptyResult" - {
+        val mm = Multimap(Map(1 -> Set("a")))
+        val mm2 = mm.delv("a")
+        assert(mm2.isEmpty)
+        assert(!mm2.nonEmpty)
+        assert(mm2.keyCount == 0)
+        assert(mm2.keys.isEmpty)
+      }
+    }
+
+    "delvs" - {
+      "removesEmptyKey" - {
+        val mm = Multimap(Map(1 -> Set("a", "b"), 2 -> Set("a", "b", "c")))
+        val mm2 = mm.delvs(Set("a", "b"))
+        assert(mm2.keyCount == 1)
+        assert(mm2.keys.toList == List(2))
+        assert(!mm2.m.contains(1))
+        assert(mm2(1).isEmpty)
+      }
+
+      "emptyResult" - {
+        val mm = Multimap(Map(1 -> Set("a", "b")))
+        val mm2 = mm.delvs(Set("a", "b"))
+        assert(mm2.isEmpty)
+        assert(!mm2.nonEmpty)
+        assert(mm2.keyCount == 0)
+        assert(mm2.keys.isEmpty)
+      }
+    }
   }
 }
