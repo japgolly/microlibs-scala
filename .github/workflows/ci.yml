@@ -20,7 +20,7 @@ jobs:
         include:
           - java: 17
             scala: 2
-          - java: 17
+          - java: 8
             scala: 3
 
     steps:
