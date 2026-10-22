@@ -43,7 +43,6 @@ object MutableFn0 {
 
   class DslWithDefaultSelector[A](default: () => A) {
     def threadUnsafe = new DslWithDefault[A](default, Variable(_))
-    def volatile = new DslWithDefault[A](default, Variable.volatile(_))
     def syncOn(lock: AnyRef) = new DslWithDefault[A](default, Variable.syncOn(lock))
   }
 
@@ -53,6 +52,5 @@ object MutableFn0 {
     new DslWithDefaultSelector[A](() => a)
 
   def threadUnsafe[A] = new Dsl[A](Variable(_))
-  def volatile[A] = new Dsl[A](Variable.volatile(_))
   def syncOn[A](lock: AnyRef) = new Dsl[A](Variable.syncOn(lock))
 }

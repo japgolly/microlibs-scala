@@ -30,16 +30,6 @@ object LongIncrementer {
     }
   }
 
-  object volatile extends Dsl[Function0] {
-    override def apply[A](f: Long => A, startAt: Long): () => A = {
-      @volatile var prev = startAt
-      () => {
-        prev += 1
-        f(prev)
-      }
-    }
-  }
-
   object cas extends Dsl[Function0] {
     override def apply[A](f: Long => A, startAt: Long): () => A = {
       val prev = new AtomicLong(startAt)

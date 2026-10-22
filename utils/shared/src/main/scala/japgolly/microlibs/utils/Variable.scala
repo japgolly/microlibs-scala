@@ -23,13 +23,6 @@ object Variable {
       override def mod(f: A => A) = { value = f(value); value }
     }
 
-  def volatile[@specialized A](init: A): Variable[A] =
-    new Variable[A] {
-      @volatile private[this] var value = init
-      override def get() = value
-      override def mod(f: A => A) = { value = f(value); value }
-    }
-
   def syncOn[@specialized A](lock: AnyRef)(init: A): Variable[A] =
     new Variable[A] {
       private[this] var value = init
