@@ -2,6 +2,7 @@ package japgolly.microlibs.utils
 
 import japgolly.microlibs.nonempty.NonEmptyVector
 import japgolly.univeq._
+import java.util.Arrays
 import scala.annotation.nowarn
 
 object ConsolidatedSeq {
@@ -154,7 +155,7 @@ final class ConsolidatedSeq[+A](values: Array[Option[A]], groups: Array[Int]) {
     new ConsolidatedSeq(values.map(_.map(f)), groups)
 
   override def hashCode =
-    values.## * 31 + groups.##
+    Arrays.hashCode(values.asInstanceOf[Array[AnyRef]]) * 31 + Arrays.hashCode(groups)
 
   override def equals(obj: Any): Boolean = obj match {
     case x: ConsolidatedSeq[_] =>
