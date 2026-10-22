@@ -22,16 +22,19 @@ object Utils {
       y.foldLeft(x)((q, a) =>
         if (x.exists(e.eqv(_, a))) q else q :+ a)
 
-  def countOccurrences(str: String, subString: String): Int = {
-    @tailrec def count(pos: Int, c: Int): Int = {
-      val idx = str.indexOf(subString, pos)
-      if (idx == -1)
-        c
-      else
-        count(idx + subString.length, c + 1)
+  def countOccurrences(str: String, subString: String): Int =
+    if (subString.isEmpty)
+      0
+    else {
+      @tailrec def count(pos: Int, c: Int): Int = {
+        val idx = str.indexOf(subString, pos)
+        if (idx == -1)
+          c
+        else
+          count(idx + subString.length, c + 1)
+      }
+      count(0, 0)
     }
-    count(0, 0)
-  }
 
   def cutoffStr(s: String, cutoff: Int): String =
     if (s.length <= cutoff)
