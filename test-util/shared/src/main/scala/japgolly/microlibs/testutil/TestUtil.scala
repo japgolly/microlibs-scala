@@ -6,9 +6,10 @@ import japgolly.microlibs.testutil.TestUtilInternals._
 import japgolly.univeq.UnivEq
 import japgolly.univeq.UnivEqCats.catsEqFromUnivEq
 import java.io.ByteArrayOutputStream
+import java.time.{Duration, Instant}
 import scala.annotation._
 import scala.io.AnsiColor._
-import scala.util.{Failure, Success, Try}
+import scala.reflect.ClassTag
 import sourcecode.Line
 
 trait TestUtilWithoutUnivEq
@@ -232,7 +233,7 @@ trait TestUtilWithoutUnivEq
       val av         = actual.toVector
       val ev         = expect.toVector
       val lenMin     = av.length min ev.length
-      val lenMax     = av.length max ev.length - 1
+      val lenMax     = (av.length max ev.length) - 1
       val leadFmt    = s"[%${lenMax.toString.length}d]"
       val leadColour = RED_B
       val leadSize   = leadFmt.format(lenMax).length
@@ -491,20 +492,81 @@ trait TestUtilWithoutUnivEq
       println(
         s"""
            |${YELLOW_B}${BLACK}assertEqWithTolerance failed:$RESET$titleSuffix
-           |${BOLD_BRIGHT_GREEN}expect: $expect$RESET
-           |${BOLD_BRIGHT_RED}actual: $actual$RESET
-           |${BOLD_BRIGHT_RED} delta: $d$RESET
-           |$YELLOW   tol: $tolerance$RESET
+           |${BOLD_BRIGHT_GREEN}   expect: $expect$RESET
+           |${BOLD_BRIGHT_RED}   actual: $actual$RESET
+           |${BOLD_BRIGHT_RED}    delta: $d$RESET
+           |${YELLOW}tolerance: $tolerance$RESET
            |""".stripMargin)
       fail(s"$errorPrefix$actual ≠ $expect by $d which exceeds tolerance of $tolerance")
     }
   }
 
-  def assertError(body: => Any): Throwable =
-    Try(body) match {
-      case Failure(t) => t
-      case Success(b) => fail("Error expected but code completed with result: " + b)
+
+  def assertEqWithTolerance(actual: Instant, expect: Instant)(implicit l: Line): Unit =
+    _assertEqWithToleranceInstant(None, actual, expect)
+
+  def assertEqWithTolerance(name: => String, actual: Instant, expect: Instant)(implicit l: Line): Unit =
+    _assertEqWithToleranceInstant(Some(name), actual, expect)
+
+  def assertEqWithTolerance(actual: Instant, expect: Instant, tolerance: Duration)(implicit l: Line): Unit =
+    _assertEqWithToleranceInstant(None, actual, expect, tolerance)
+
+  def assertEqWithTolerance(name: => String, actual: Instant, expect: Instant, tolerance: Duration)(implicit l: Line): Unit =
+    _assertEqWithToleranceInstant(Some(name), actual, expect, tolerance)
+
+  private def _assertEqWithToleranceInstant(_name: => Option[String], actual: Instant, expect: Instant, tolerance: Duration = Duration.ofMillis(100))(implicit l: Line): Unit = {
+    val d = Duration.between(actual, expect).abs()
+    if (d.compareTo(tolerance) > 0) {
+      val name = _name
+      val titleSuffix = name.fold("")(n => s" ${BOLD_BRIGHT_YELLOW}$n$RESET")
+      val errorPrefix = name.fold("")(n => s"[$n] ")
+      println(
+        s"""
+           |${YELLOW_B}${BLACK}assertEqWithTolerance failed:$RESET$titleSuffix
+           |${BOLD_BRIGHT_GREEN}   expect: $expect$RESET
+           |${BOLD_BRIGHT_RED}   actual: $actual$RESET
+           |${BOLD_BRIGHT_RED}    delta: $d$RESET
+           |${YELLOW}tolernace: $tolerance$RESET
+           |""".stripMargin)
+      fail(s"$errorPrefix$actual ≠ $expect by $d which exceeds tolerance of $tolerance")
     }
+  }
+
+  def assertThrows(body: => Any)(implicit l: Line): Throwable =
+    _assertThrows("assertThrows", None, body)
+
+  def assertThrows(name: => String, body: => Any)(implicit l: Line): Throwable =
+    _assertThrows("assertThrows", Some(name), body)
+
+  private def _assertThrows(method: String, name: => Option[String], body: => Any)(implicit l: Line): Throwable = {
+    val error: Throwable =
+      try {
+        body
+        null
+      } catch {
+        case t: Throwable => t
+      }
+    if (error eq null)
+      fail(s"${descMethod(method, name)} failed. No exception was thrown.")
+    else
+      error
+  }
+
+  def assertThrowsA[T <: Throwable: ClassTag](body: => Any)(implicit l: Line): T =
+    _assertThrowsA[T](None, body)
+
+  def assertThrowsA[T <: Throwable: ClassTag](name: => String, body: => Any)(implicit l: Line): T =
+    _assertThrowsA[T](Some(name), body)
+
+  private def _assertThrowsA[T <: Throwable](name: => Option[String], body: => Any)(implicit l: Line, ct: ClassTag[T]): T = {
+    val method = "assertThrowsA"
+    _assertThrows(method, name, body) match {
+      case t: T => t
+      case t    =>
+        t.printStackTrace()
+        fail(s"${descMethod(method, name)} failed. ${t.getClass.getName} is not an instance of ${ct.runtimeClass.getName}")
+    }
+  }
 }
 
 trait TestUtil

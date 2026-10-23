@@ -8,7 +8,7 @@ final case class FnWithFallback[A, B](withFallback: (A => B) => A => B) extends 
   def withFallbackByValue(b: B): A => B =
     withFallback(_ => b)
 
-  def withFallbackByNeed(b: B): A => B = {
+  def withFallbackByNeed(b: => B): A => B = {
     lazy val bb = b
     withFallback(_ => bb)
   }

@@ -1,5 +1,5 @@
 package japgolly.microlibs
 
-package object utils {
+package object utils extends utils.PackageShared {
   val Platform: Platform = PlatformJVM
 }

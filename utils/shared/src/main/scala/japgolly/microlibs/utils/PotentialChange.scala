@@ -88,8 +88,8 @@ sealed abstract class PotentialChange[+E, +A] {
 
   final def ignore(f: A => Boolean): PotentialChange[E, A] =
     this match {
-      case Success(a) if !f(a) => Unchanged
-      case _                   => this
+      case Success(a) if f(a) => Unchanged
+      case _                  => this
     }
 
   final def ignoreValue[AA >: A](a: => AA)(implicit e: Eq[AA]): PotentialChange[E, A] =

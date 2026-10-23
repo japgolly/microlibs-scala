@@ -2,7 +2,7 @@ package japgolly.microlibs.stdlib_ext
 
 import scala.collection.immutable.ArraySeq
 import scala.collection.{Factory, View}
-import scala.collection.Factory
+import scala.reflect.ClassTag
 
 /**
   * Scala arrays don't support in-place modification.
@@ -16,7 +16,7 @@ final class MutableArray[A](underlying: Array[Any]) {
 
   private[this] var pendingMap: Option[Any => Any] = None
 
-  def array: Array[A] = {
+  private def applyPendingMap(): Unit =
     pendingMap.foreach { f =>
       pendingMap = None
       var i = length
@@ -25,7 +25,34 @@ final class MutableArray[A](underlying: Array[Any]) {
         underlying(i) = f(underlying(i))
       }
     }
-    underlying.asInstanceOf[Array[A]]
+
+  private def copyToPrimitive(dest: Array[A], ct: ClassTag[A]): Unit =
+    ct match {
+      case ClassTag.Int     => val d = dest.asInstanceOf[Array[Int]];     var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Int] }
+      case ClassTag.Double  => val d = dest.asInstanceOf[Array[Double]];  var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Double] }
+      case ClassTag.Long    => val d = dest.asInstanceOf[Array[Long]];    var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Long] }
+      case ClassTag.Boolean => val d = dest.asInstanceOf[Array[Boolean]]; var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Boolean] }
+      case ClassTag.Byte    => val d = dest.asInstanceOf[Array[Byte]];    var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Byte] }
+      case ClassTag.Char    => val d = dest.asInstanceOf[Array[Char]];    var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Char] }
+      case ClassTag.Float   => val d = dest.asInstanceOf[Array[Float]];   var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Float] }
+      case ClassTag.Short   => val d = dest.asInstanceOf[Array[Short]];   var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Short] }
+      case ClassTag.Unit    => val d = dest.asInstanceOf[Array[Unit]];    var i = length; while (i > 0) { i -= 1; d(i) = underlying(i).asInstanceOf[Unit] }
+      case _                => var i = length; while (i > 0) { i -= 1; java.lang.reflect.Array.set(dest, i, underlying(i)) }
+    }
+
+  def array(implicit ct: ClassTag[A] = null): Array[A] = {
+    applyPendingMap()
+    if (ct == null || ct.runtimeClass.isAssignableFrom(underlying.getClass.getComponentType))
+      underlying.asInstanceOf[Array[A]]
+    else if (ct.runtimeClass.isPrimitive) {
+      val dest = ct.newArray(length)
+      copyToPrimitive(dest, ct)
+      dest
+    } else {
+      val dest = ct.newArray(length)
+      System.arraycopy(underlying, 0, dest, 0, length)
+      dest
+    }
   }
 
   inline def widen[B >: A]: MutableArray[B] =
@@ -33,7 +60,7 @@ final class MutableArray[A](underlying: Array[Any]) {
 
   def iterator(): Iterator[A] =
     pendingMap match {
-      case None    => array.iterator
+      case None    => underlying.iterator.asInstanceOf[Iterator[A]]
       case Some(f) => underlying.iterator.map(f(_).asInstanceOf[A])
     }
 
@@ -44,7 +71,7 @@ final class MutableArray[A](underlying: Array[Any]) {
   }
 
   inline def sort(implicit o: Ordering[A]): MutableArray[A] = {
-    scala.util.Sorting.quickSort(array)(o)
+    scala.util.Sorting.quickSort(array(null))(o)
     this
   }
 
@@ -63,20 +90,20 @@ final class MutableArray[A](underlying: Array[Any]) {
     b.result()
   }
 
-  inline def arraySeq: ArraySeq[A] =
-    ArraySeq.unsafeWrapArray(array)
+  inline def arraySeq(implicit ct: ClassTag[A] = null): ArraySeq[A] =
+    ArraySeq.unsafeWrapArray(array(ct))
 
   inline def view: View[A] =
     View.fromIteratorProvider(() => iterator())
 
   inline def mkString(start: String, sep: String, end: String): String =
-    array.mkString(start, sep, end)
+    iterator().mkString(start, sep, end)
 
   inline def mkString(sep: String): String =
-    array.mkString(sep)
+    iterator().mkString(sep)
 
   inline def mkString: String =
-    array.mkString
+    iterator().mkString
 }
 
 // =====================================================================================================================

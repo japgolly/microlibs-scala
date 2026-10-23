@@ -401,7 +401,7 @@ abstract class MacroUtils {
   final def needInferImplicit(t: Type)(implicit filename: sourcecode.FileName, line: Line): Tree =
     tryInferImplicit(t) getOrElse fail(s"Implicit not found: $t")
 
-  implicit val liftInit = Liftable[Init](i => q"..${i.stmts}")
+  implicit val liftInit: Liftable[Init] = Liftable[Init](i => q"..${i.stmts}")
   class Init(freshNameFn: Int => String, lazyVals: Boolean = false) {
     var seen = Map.empty[String, TermName]
     var stmts: Vector[Tree] = Vector.empty

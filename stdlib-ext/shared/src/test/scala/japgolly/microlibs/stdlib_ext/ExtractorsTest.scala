@@ -16,6 +16,7 @@ object ExtractorsTest extends TestSuite {
       "2D9S" - assertEq(ParseDuration.unapply("2D9S"), Option(Duration.ofDays(2) plus Duration.ofSeconds(9)))
       "2 days, 8 minutes" - assertEq(ParseDuration.unapply("2 days, 8 minutes"), Option(Duration.ofDays(2) plus Duration.ofMinutes(8)))
       "2 DAYS, 8 MINUTES" - assertEq(ParseDuration.unapply("2 DAYS, 8 MINUTES"), Option(Duration.ofDays(2) plus Duration.ofMinutes(8)))
+      "500μs" - assertEq(ParseDuration.unapply("500μs"), Option(Duration.of(500, java.time.temporal.ChronoUnit.MICROS)))
     }
 
   }

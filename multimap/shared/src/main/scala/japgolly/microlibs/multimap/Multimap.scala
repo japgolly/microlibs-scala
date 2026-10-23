@@ -29,7 +29,7 @@ final class Multimap[K, L[_], V](val m: Map[K, L[V]])(implicit L: MultiValues[L]
   def delk    (k: K)                  = copy(m - k)
   def delv    (v: V)                  = copy(m delv v)
   def delks   (ks: L[K])              = copy(ks.foldl(m)(_ - _))
-  def delvs   (vs: L[V])              = copy(m.view.mapValues(_ deln vs).toMap)
+  def delvs   (vs: L[V])              = copy(m delvs vs)
   def setks   (ks: L[K], v: V)        = copy(m.delv(v).addks(ks, v))
   def setvs   (k: K, vs: L[V])        = mod(k, _ => vs)
 
@@ -78,7 +78,8 @@ object Multimap {
 
   private[multimap] object Internal {
     implicit final class MultiMapExt[K, L[_], V](private val m: Map[K, L[V]]) extends AnyVal {
-      @inline def delv(v: V)                (implicit L: MultiValues[L]): Map[K, L[V]] = m.view.mapValues(_ del1 v).toMap
+      @inline def delv(v: V)                (implicit L: MultiValues[L]): Map[K, L[V]] = m.view.mapValues(_ del1 v).filterNot(_._2.isEmpty).toMap
+      @inline def delvs(vs: L[V])           (implicit L: MultiValues[L]): Map[K, L[V]] = if (vs.isEmpty) m else m.view.mapValues(_ deln vs).filterNot(_._2.isEmpty).toMap
       @inline def getOrEmpty(k: K)          (implicit L: MultiValues[L]): L[V]         = m.getOrElse(k, L.empty)
       @inline def add(kv: (K, V))           (implicit L: MultiValues[L]): Map[K, L[V]] = mod(kv._1, _ add1 kv._2)
       @inline def add(k: K, v: V)           (implicit L: MultiValues[L]): Map[K, L[V]] = mod(k, _ add1 v)

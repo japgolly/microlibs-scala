@@ -1,7 +1,5 @@
 package japgolly.microlibs.compiletime
 
-import scala.annotation.nowarn
-
 abstract class WhiteboxMacroUtils extends MacroUtils {
   val c: scala.reflect.macros.whitebox.Context
   import c.universe._
@@ -12,7 +10,6 @@ abstract class WhiteboxMacroUtils extends MacroUtils {
       case x => fail(s"Unable to determine annotation args.\n${showRaw(x)}")
     }
 
-  @nowarn("cat=unused")
   def replaceEmptyBodyInAnnotatedObject(annottees: Seq[c.Expr[Any]])(newBody: List[Tree]): Tree =
     annottees.map(_.tree) match {
       case List(q"object $objName extends $parent { ..$body }") if body.isEmpty =>

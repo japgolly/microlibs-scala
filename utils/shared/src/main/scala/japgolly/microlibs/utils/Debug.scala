@@ -206,6 +206,7 @@ object Debug {
           lock.synchronized {
             a.clear()
             b.clear()
+            lastOk = -1
           }
 
         override val addA: String => Unit = add(_, true)

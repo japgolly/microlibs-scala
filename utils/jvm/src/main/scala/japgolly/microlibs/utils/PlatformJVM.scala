@@ -20,7 +20,7 @@ object PlatformJVM extends Platform {
 
   override def memoInt[A](f: Int => A): Int => A = {
     val lock = new AnyRef
-    var m = IntMap.empty[A]
+    @volatile var m = IntMap.empty[A]
     i => {
 
       def cacheMiss() = {
@@ -38,8 +38,9 @@ object PlatformJVM extends Platform {
 
   override def memoThunk[A](f: () => A): () => A = {
     val lock = new AnyRef
-    var oa: Option[A] = None
+    @volatile var oa: Option[A] = None
     () => {
+
       def cacheMiss() = {
         val a = f()
         oa = Some(a)

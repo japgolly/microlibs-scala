@@ -83,20 +83,23 @@ object IndexLabel {
       go(index, null)
     }
 
-    override def parse(label: String) = {
-      var ok = true
-      var sum = 0
-      for (c <- label) {
-        val v = c.toLower - First + 1
-        if (v <= 0 || v > 26)
-          ok = false
-        else
-          sum = sum * 26 + v
-      }
-      if (ok)
-        Some(sum - 1)
-      else
+    override def parse(label: String) =
+      if (label.isEmpty)
         None
-    }
+      else {
+        var ok = true
+        var sum = 0
+        for (c <- label) {
+          val v = c.toLower - First + 1
+          if (v <= 0 || v > 26)
+            ok = false
+          else
+            sum = sum * 26 + v
+        }
+        if (ok)
+          Some(sum - 1)
+        else
+          None
+      }
   }
 }

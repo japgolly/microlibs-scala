@@ -3,27 +3,34 @@ name: CI
 on:
   pull_request:
   push:
+    branches:
+      - 'main'
+    tags-ignore:
+      - v*.*.*
 
 jobs:
+
   ci:
+    name: Scala v${{ matrix.scala }} / Java v${{ matrix.java }}
     runs-on: ubuntu-latest
+
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - java: 14
+          - java: 17
             scala: 2
           - java: 8
             scala: 3
-    name: Scala v${{ matrix.scala }} / Java v${{ matrix.java }}
-    steps:
 
+    steps:
       - name: Git checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       - name: Setup Scala
-        uses: japgolly/setup-everything-scala@v3.1
+        uses: japgolly/setup-everything-scala@v4.1
         with:
-          java-version: adopt@1.${{ matrix.java }}
+          java-version: adoptium@1.${{ matrix.java }}
 
       - name: Build and test
         shell: bash

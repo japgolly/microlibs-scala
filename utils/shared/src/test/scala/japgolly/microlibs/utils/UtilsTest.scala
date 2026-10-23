@@ -74,5 +74,20 @@ object UtilsTest extends TestSuite {
       }.check()
     }
 
+    "countOccurrences" - {
+      "nonEmpty" - {
+        assertEq(Utils.countOccurrences("banana", "an"), 2)
+        assertEq(Utils.countOccurrences("banana", "a"), 3)
+        assertEq(Utils.countOccurrences("banana", "x"), 0)
+        assertEq(Utils.countOccurrences("aaa", "aa"), 1)
+        assertEq(Utils.countOccurrences("a", "aaa"), 0)
+        assertEq(Utils.countOccurrences("", "a"), 0)
+      }
+      "emptySubstring" - {
+        assertEq(Utils.countOccurrences("hello", ""), 0)
+        assertEq(Utils.countOccurrences("", ""), 0)
+      }
+    }
+
   }
 }
