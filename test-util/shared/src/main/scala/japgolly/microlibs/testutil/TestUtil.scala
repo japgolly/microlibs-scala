@@ -501,7 +501,6 @@ trait TestUtilWithoutUnivEq
     }
   }
 
-
   def assertEqWithTolerance(actual: Instant, expect: Instant)(implicit l: Line): Unit =
     _assertEqWithToleranceInstant(None, actual, expect)
 
