@@ -132,6 +132,7 @@ object Microlibs {
       moduleName := "cats-ext",
       scalacOptions --= Seq("-source:3.0-migration"),
       libraryDependencies += Dep.catsCore.value)
+    .jsSettings(libraryDependencies += Dep.scalaJsJavaTime.value % Test)
 
   lazy val compileTimeJVM = compileTime.jvm
   lazy val compileTimeJS  = compileTime.js
