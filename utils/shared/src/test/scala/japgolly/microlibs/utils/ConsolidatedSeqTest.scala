@@ -65,5 +65,13 @@ object ConsolidatedSeqTest extends TestSuite {
       c.map(_.values.mkString("[", ",", "]"))
     }
 
+    "hashCode" - {
+      val a = new ConsolidatedSeq(Array[Option[Int]](Some(1), None), Array(0, 0))
+      val b = new ConsolidatedSeq(Array[Option[Int]](Some(1), None), Array(0, 0))
+      assert(a == b)
+      assert(a.hashCode == b.hashCode)
+      assert(Set(a).contains(b))
+    }
+
   }
 }

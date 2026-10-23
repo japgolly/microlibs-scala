@@ -39,6 +39,8 @@ object IndexLabelTest extends TestSuite {
       "27 ↔ ab" - test(27, "ab")
       "51 ↔ az" - test(51, "az")
       "52 ↔ ba" - test(52, "ba")
+      "parseEmpty"   - assert(Alpha.parse("") == None)
+      "parseInvalid" - assert(Alpha.parse("!").isEmpty)
     }
 
     "roman" - {

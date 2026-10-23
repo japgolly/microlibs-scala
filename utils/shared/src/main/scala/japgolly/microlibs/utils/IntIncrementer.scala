@@ -30,16 +30,6 @@ object IntIncrementer {
     }
   }
 
-  object volatile extends Dsl[Function0] {
-    override def apply[A](f: Int => A, startAt: Int): () => A = {
-      @volatile var prev = startAt
-      () => {
-        prev += 1
-        f(prev)
-      }
-    }
-  }
-
   object cas extends Dsl[Function0] {
     override def apply[A](f: Int => A, startAt: Int): () => A = {
       val prev = new AtomicInteger(startAt)

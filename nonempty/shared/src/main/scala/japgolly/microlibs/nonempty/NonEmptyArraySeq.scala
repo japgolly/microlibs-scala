@@ -138,7 +138,7 @@ final class NonEmptyArraySeq[+A] private[NonEmptyArraySeq](val whole: ArraySeq[A
     intercalateF(b)(a => a)
 
   def intercalateF[B: ClassTag](b: B)(f: A => B): NonEmptyArraySeq[B] = {
-    val x = new Array[B](length << 1 - 1)
+    val x = new Array[B]((length << 1) - 1)
     x(0) = f(head)
     var i = 0
     for (a <- tail) {

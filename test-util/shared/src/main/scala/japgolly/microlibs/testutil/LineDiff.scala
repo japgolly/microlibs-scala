@@ -231,14 +231,14 @@ object LineDiff {
         // Find matches at the end of the lines. Catches non-unique, yet
         // equal lines.
         def findEndMatches(pos1: Int, pos2: Int, acc: List[IndexPair]): (Int, Int, List[IndexPair]) =
-          if (pos1 <= bounds1._1 || pos2 <= bounds2._1 || lines1(pos1 - 1) != lines2(pos2 - 1))
+          if (pos1 < bounds1._1 || pos2 < bounds2._1 || lines1(pos1) != lines2(pos2))
             (pos1, pos2, acc)
           else
-            findEndMatches(pos1 - 1, pos2 - 1, acc :+ ((pos1, pos2)))
+            findEndMatches(pos1 - 1, pos2 - 1, ((pos1, pos2)) :: acc)
 
         val (pos1, pos2, endList) = findEndMatches(bounds1._2 - 1, bounds2._2 - 1, Nil)
         // Find any matches between end matches and last position.
-        val endGapList = recursiveMatch(lines1, lines2, (lastPos._1 + 1, pos1), (lastPos._2, pos2))
+        val endGapList = recursiveMatch(lines1, lines2, (bounds1._1, pos1 + 1), (bounds2._1, pos2 + 1))
 
         // Add any matches between end matched and last match first
         // to retain correct ordering.

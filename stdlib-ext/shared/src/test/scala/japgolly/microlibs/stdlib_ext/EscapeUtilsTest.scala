@@ -49,5 +49,12 @@ object EscapeUtilsTest extends TestSuite {
       }
     }
 
+    "htmlEscape" - {
+      val input = """<script>alert("hello & 'goodbye'");</script>"""
+      val actual = EscapeUtils.htmlEscape(input)
+      val expect = """&lt;script&gt;alert(&quot;hello &amp; &#39;goodbye&#39;&quot;);&lt;/script&gt;"""
+      assertEq(actual, expect)
+    }
+
   }
 }

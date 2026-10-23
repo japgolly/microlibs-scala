@@ -8,7 +8,7 @@ object CatsUtil {
   def equalInstantWithTolerance(tolerance: Duration): Eq[Instant] =
     Eq((a, b) => {
       val d = Duration.between(b, a).abs()
-      tolerance.compareTo(d) > 0
+      tolerance.compareTo(d) >= 0
     })
 
 }
