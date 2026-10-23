@@ -36,5 +36,29 @@ object TestUtilTest extends TestSuite {
       assertEqWithTolerance(a, b, Duration.ofSeconds(3))
       assertThrows(assertEqWithTolerance(a, b, Duration.ofSeconds(1)))
     }
+
+    "assertSeq" - {
+      def captureOutput(a: => Any): String = {
+        val os = new java.io.ByteArrayOutputStream()
+        Console.withOut(os)(
+          Console.withErr(os)(
+            try a
+            catch { case _: java.lang.AssertionError => () }
+          )
+        )
+        os.toString
+      }
+
+      "leadFormat" - {
+        val out = captureOutput(assertSeq(0 until 10, Seq.empty[Int]))
+        assertContainsAll(out, "[0]")
+        assertNotContainsAny(out, "[ 0]")
+      }
+
+      "noOutOfBoundsLoop" - {
+        val out = captureOutput(assertSeq(Seq("a"), Seq("b")))
+        assert(!out.contains("\n\n\n"))
+      }
+    }
   }
 }

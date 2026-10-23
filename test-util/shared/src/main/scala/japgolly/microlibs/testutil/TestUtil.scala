@@ -185,7 +185,7 @@ trait TestUtilWithoutUnivEq
       val av         = actual.toVector
       val ev         = expect.toVector
       val lenMin     = av.length min ev.length
-      val lenMax     = av.length max ev.length - 1
+      val lenMax     = (av.length max ev.length) - 1
       val leadFmt    = s"[%${lenMax.toString.length}d]"
       val leadColour = RED_B
       val leadSize   = leadFmt.format(lenMax).length
